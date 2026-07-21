@@ -34,7 +34,7 @@ Allowed forms (must match):
 
 **Do not** use types outside the list (`chore`, `style`, `revert`, etc.). **Do not** invent free-form scopes (folder names, package names) — scope is only a ticket key, or omit it.
 
-**No agent co-authors.** The commit must not include `Co-authored-by` (or similar trailers) for Cursor or any other AI/agent. Do not add them; strip them if a tool or hook would inject them.
+**No agent attribution.** Do not record Cursor or any other AI/agent as a co-author or contributor — neither in the commit subject/body nor via trailers (`Co-authored-by`, `Made-with`, or similar). Do not add such text; strip it if a tool or hook would inject it.
 
 ### Examples
 
@@ -61,7 +61,7 @@ Only commit when the user asks. Never update git config, never `--force` push, n
    - `git branch --show-current` (or `git status -sb`) — if the branch name matches `[A-Z][A-Z0-9]+-\d+`, that ticket **must** be the message scope
    - `git diff` and `git diff --cached`
    - `git log -5 --oneline` (match message style)
-2. Draft a message that matches the format above. Prefer why/impact in the subject when it still fits one line; keep it short. No `Co-authored-by` / agent trailers.
+2. Draft a message that matches the format above. Prefer why/impact in the subject when it still fits one line; keep it short. No agent attribution in the message or trailers.
 3. Stage relevant files only (no secrets: `.env`, credentials, tokens).
 4. Commit with a HEREDOC:
 
@@ -73,7 +73,7 @@ EOF
 )"
 ```
 
-5. Run `git status` after and confirm success. Verify the message has no agent co-author trailers (`git log -1 --format=%B`).
+5. Run `git status` after and confirm success. Verify the full message has no agent attribution in subject, body, or trailers (`git log -1 --format=%B`).
 
 If a pre-commit hook fails, fix the issue and create a **new** commit — do not amend unless the user asked to amend and the amend safety rules below are met.
 
