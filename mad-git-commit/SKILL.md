@@ -34,7 +34,9 @@ Allowed forms (must match):
 
 **Do not** use types outside the list (`chore`, `style`, `revert`, etc.). **Do not** invent free-form scopes (folder names, package names) — scope is only a ticket key, or omit it.
 
-**No agent attribution.** Do not record Cursor or any other AI/agent as a co-author or contributor — neither in the commit subject/body nor via trailers (`Co-authored-by`, `Made-with`, or similar). Do not add such text; strip it if a tool or hook would inject it.
+**Create a clean commit on the first attempt.** The commit message must contain only the intended conventional-commit subject and body. Do not record Cursor or any other AI/agent as a co-author or contributor, including trailers such as `Co-authored-by` or `Made-with`.
+
+Before running `git commit` in Cursor IDE, ensure **Cursor Settings → Agent → Attribution → Commit Attribution** is disabled. If the environment is known to inject attribution and this cannot be confirmed, stop before committing and ask the user to disable it. Do not create a commit and then amend or rewrite it solely to remove attribution.
 
 ### Examples
 
