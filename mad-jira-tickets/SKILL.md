@@ -1,5 +1,5 @@
 ---
-name: jira-tickets
+name: mad-jira-tickets
 description: Create and update Jira tickets with action-verb summaries and ADF descriptions (user story, References, Acceptance Criteria); set Blocks links and Rank order via REST. Use when creating, updating, or reformatting Jira issues, writing ticket descriptions, linking dependencies, ranking backlog order, or submitting descriptions via the Jira Cloud REST API.
 ---
 

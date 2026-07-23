@@ -1,5 +1,5 @@
 ---
-name: repo-readme
+name: mad-repo-readme
 description: Write or update repository README files. Use when creating a README, editing README.md, or documenting how to install or use a repo.
 ---
 

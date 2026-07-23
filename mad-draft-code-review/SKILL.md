@@ -1,5 +1,5 @@
 ---
-name: draft-code-review
+name: mad-draft-code-review
 description: >-
   Leave unpublished draft code-review comments on GitLab MRs (or GitHub PRs)
   with team-friendly voice, Nit labeling, cross-linked threads, and natural

@@ -1,5 +1,5 @@
 ---
-name: update-mad-skills
+name: mad-update-skills
 description: >-
   Sync Mad Skills from the remote git repository. Use when the user asks to
   update global skills, sync Mad Skills, pull Mad Skills, or refresh skills

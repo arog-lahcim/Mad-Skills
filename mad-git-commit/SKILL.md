@@ -1,5 +1,5 @@
 ---
-name: git-commit
+name: mad-git-commit
 description: >-
   Create git commits using Cledar conventional-commit message rules. Use when
   the user asks to commit, write a commit message, stage and commit, or amend
@@ -39,7 +39,7 @@ Allowed forms (must match):
 ### Examples
 
 ```
-feat: add update-mad-skills skill
+feat: add mad-update-skills skill
 feat(ABC-123): add new feature
 fix(DATA-1284): handle empty Spark input objects
 docs: clarify global skills install symlink
