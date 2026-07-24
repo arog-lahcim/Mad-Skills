@@ -53,6 +53,7 @@ If the review target is GitHub, use `gh` pending-review APIs equivalently: creat
 - Sparse or missing MR/PR descriptions — not a review problem.
 - Praise or blame of the author’s work (“Nice work”, “This is sloppy”, etc.). Overall judgment is for the human reviewer to write.
 - That the review is a draft / unpublished — the UI already shows that.
+- Merge conflicts between the source/current branch and the base/target branch — the UI already shows them and blocks merging until they are resolved.
 - Priority labels (`Low`, `Medium`, `High`, “nitpick priority”, etc.) except the `Nit:` prefix below.
 
 ## Overview (general) note
@@ -60,7 +61,7 @@ If the review target is GitHub, use `gh` pending-review APIs equivalently: creat
 - No title or heading — it is already a review of this MR/PR.
 - No praise or criticism of the work.
 - Do **not** restate topics covered by inline comments.
-- Keep only items that have no inline home (e.g. rebase / conflict with target branch).
+- Keep only items that have no inline home (e.g. a rebase needed because the branch is behind the target).
 - Omit the overview entirely if there is nothing left to say.
 
 ## Inline comments
@@ -90,9 +91,22 @@ Put the closer alone on its **own line** after a blank line. Do not force a clos
 | Situation | Closer | Notes |
 | --- | --- | --- |
 | Open decision / choice of approaches | `Wdyt?` | Acronym only; write `Wdyt?` not `WDYT?`. |
-| Uncertainty about current behavior or understanding | `Does it make sense?` or `Am I correct?` | Short sentences OK here. |
+| Uncertainty about current behavior or understanding | `Does it make sense?`, `Makes sense?`, or `Am I correct?` | Short sentences OK here. |
+
+Vary the closer across a review — do not reuse the same phrase (e.g. `Does it make sense?`) on every comment; rotate through the options above as fits each one.
 
 **Do not use:** `LMK`, long closing sentences for decisions (`Curious what you'd prefer.`, `Thoughts?`, etc.), or closers on clear consistency fixes / soft docs asks where the decision already lives on a related thread.
+
+### Emoji (optional, off by default)
+
+Only add emoji if the user asks for a friendlier tone. When enabled:
+
+- Not on every comment — leave plain the ones on serious findings (security, auth, data loss, migrations/infra risk).
+- At most one emoji per comment, placed at the very end (after the closer, or after the last sentence if there's no closer) — never mid-paragraph.
+- Vary the emoji across comments; do not reuse the same one every time (e.g. don't default to `:thinking:` everywhere).
+- Match the emoji to the comment's nature: `:thinking:` for genuine uncertainty/doubt, `:bulb:` for a suggestion, `:slightly_smiling_face:` for a light nit or casual aside.
+- Use GitLab/GitHub emoji shortcodes (`:thinking:`, not a raw Unicode character).
+- When editing an existing draft note via the GitLab Draft Notes `PUT` endpoint, always resend the full `position` object together with `note` — sending `note` alone wipes the note's inline position.
 
 ## Example shapes
 
@@ -128,9 +142,10 @@ Wdyt?
 
 - [ ] Comments are drafts only (not published) unless the user asked to submit
 - [ ] English (unless user requested another language)
-- [ ] No praise/blame overview; no draft meta; no MR-description nags
+- [ ] No praise/blame overview; no draft meta; no MR-description nags; no source/base branch conflict comments
 - [ ] Overview does not duplicate inline topics; no overview title
 - [ ] Nits use `Nit: `; no other priority labels; bold used sparingly
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
-- [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`
+- [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
+- [ ] Emoji only if requested; not on every comment; varied, not repeated; skipped on serious findings; `PUT` updates include `position` alongside `note`
