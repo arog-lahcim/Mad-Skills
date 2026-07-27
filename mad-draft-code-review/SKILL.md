@@ -3,9 +3,11 @@ name: mad-draft-code-review
 description: >-
   Leave unpublished draft code-review comments on GitLab MRs (or GitHub PRs)
   with team-friendly voice, Nit labeling, cross-linked threads, and natural
-  closers (Wdyt?, Does it make sense?). Use when the user asks to review a
-  merge request or pull request, open a draft review, add review comments
-  without publishing, or refine pending draft notes.
+  closers (Wdyt?, Does it make sense?). On re-review, award ✅ and resolve
+  threads that are properly fixed — do not leave acknowledgment replies.
+  Use when the user asks to review a merge request or pull request, open a
+  draft review, add review comments without publishing, or refine pending
+  draft notes.
 ---
 
 # Draft Code Review
@@ -21,6 +23,7 @@ Default comment language: **English** (unless the user requests otherwise).
 3. Create **draft** inline notes on concrete lines plus an optional general overview note.
 4. Show the user a short summary of what was left as draft. Keep drafts unpublished.
 5. Iterate on wording when the user gives style feedback — update drafts in place; still do not publish unless asked.
+6. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review).
 
 ### GitLab (preferred when `glab` is available)
 
@@ -99,7 +102,7 @@ Vary the closer across a review — do not reuse the same phrase (e.g. `Does it 
 
 ### Emoji (optional, off by default)
 
-Only add emoji if the user asks for a friendlier tone. When enabled:
+Only add emoji in comment **bodies** if the user asks for a friendlier tone. When enabled:
 
 - Not on every comment — leave plain the ones on serious findings (security, auth, data loss, migrations/infra risk).
 - At most one emoji per comment, placed at the very end (after the closer, or after the last sentence if there's no closer) — never mid-paragraph.
@@ -107,6 +110,32 @@ Only add emoji if the user asks for a friendlier tone. When enabled:
 - Match the emoji to the comment's nature: `:thinking:` for genuine uncertainty/doubt, `:bulb:` for a suggestion, `:slightly_smiling_face:` for a light nit or casual aside.
 - Use GitLab/GitHub emoji shortcodes (`:thinking:`, not a raw Unicode character).
 - When editing an existing draft note via the GitLab Draft Notes `PUT` endpoint, always resend the full `position` object together with `note` — sending `note` alone wipes the note's inline position.
+
+The ✅ award on a properly resolved re-review thread (below) is separate from this optional body-emoji mode — always apply it when a thread is fully addressed.
+
+## Resolved threads on re-review
+
+When re-reviewing after author replies and/or new commits, check each open thread from prior review rounds against the current code.
+
+**If the finding is properly resolved** (fix or agreed approach is in the diff / reply, nothing left to ask):
+
+- Do **not** leave an acknowledgment reply (“Looks good”, “Works for me”, etc.).
+- Award the check mark button emoji (`white_check_mark` / ✅) on the **latest note** in that discussion (usually the author’s reply).
+- Resolve the discussion.
+
+GitLab:
+
+```text
+POST  /projects/:id/merge_requests/:iid/notes/:note_id/award_emoji
+      form: name=white_check_mark
+
+PUT   /projects/:id/merge_requests/:iid/discussions/:discussion_id
+      form: resolved=true
+```
+
+**If the finding is only partly addressed**, leave a new draft (reply or fresh inline note) on what remains — do not resolve, do not award ✅.
+
+**If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still ✅ + resolve the original thread when that original ask is done.
 
 ## Example shapes
 
@@ -148,4 +177,5 @@ Wdyt?
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
-- [ ] Emoji only if requested; not on every comment; varied, not repeated; skipped on serious findings; `PUT` updates include `position` alongside `note`
+- [ ] Emoji in comment bodies only if requested; not on every comment; varied, not repeated; skipped on serious findings; `PUT` updates include `position` alongside `note`
+- [ ] Re-review: properly resolved threads get ✅ (`white_check_mark`) on the latest note + discussion resolved — no acknowledgment reply drafts
