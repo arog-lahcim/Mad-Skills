@@ -3,8 +3,10 @@ name: mad-draft-code-review
 description: >-
   Leave unpublished draft code-review comments on GitLab MRs (or GitHub PRs)
   with team-friendly voice, Nit labeling, cross-linked threads, and natural
-  closers (Wdyt?, Does it make sense?). On re-review, award ✅ and resolve
-  threads that are properly fixed — do not leave acknowledgment replies.
+  closers (Wdyt?, Does it make sense?). Grounds the review in the linked
+  ticket's acceptance criteria and the specs it references. On re-review,
+  award ✅ and resolve threads that are properly fixed — do not leave
+  acknowledgment replies.
   Use when the user asks to review a merge request or pull request, open a
   draft review, add review comments without publishing, or refine pending
   draft notes.
@@ -19,11 +21,13 @@ Default comment language: **English** (unless the user requests otherwise).
 ## Workflow
 
 1. Load MR/PR context: title, description, commits, CI, changed files, full diffs.
-2. Review for correctness, edge cases, API contracts, tests, and merge risks (e.g. branch behind target).
-3. Create **draft** inline notes on concrete lines plus an optional general overview note.
-4. Show the user a short summary of what was left as draft. Keep drafts unpublished.
-5. Iterate on wording when the user gives style feedback — update drafts in place; still do not publish unless asked.
-6. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review).
+2. Load the ticket and the docs it references — see [Ticket and documentation context](#ticket-and-documentation-context).
+3. Check out the branch (shallow clone is enough) and read the changed files whole, plus the code paths they contract with — writers of a field a resolver reads, callers of a changed signature. Diff-only review misses mismatches that live in unchanged code.
+4. Review for correctness, edge cases, API contracts, tests, merge risks (e.g. branch behind target), and unmet acceptance criteria.
+5. Create **draft** inline notes on concrete lines plus an optional general overview note.
+6. Show the user a short summary of what was left as draft. Keep drafts unpublished.
+7. Iterate on wording when the user gives style feedback — update drafts in place; still do not publish unless asked.
+8. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review).
 
 ### GitLab (preferred when `glab` is available)
 
@@ -44,16 +48,49 @@ PUT/DELETE  /projects/:id/merge_requests/:iid/draft_notes/:draft_note_id
 
 If the review target is GitHub, use `gh` pending-review APIs equivalently: create a pending review and comments; do not submit until asked.
 
+## Ticket and documentation context
+
+A diff can be internally consistent and still not deliver what was asked for. Ground the review in the ticket before reading code.
+
+### Find the ticket
+
+- Ticket key from the branch name (`CPL-1024-…`), the MR/PR title, or a `Closes CPL-1024` / `Fixes #123` line in the description.
+- Jira: read it with the `mcp-atlassian` MCP (`jira_get_issue`) — read-only MCP use is fine.
+- GitLab/GitHub issues: the MR context already lists what it closes; fetch those issues.
+- No ticket reference anywhere: review against the diff alone and say so in the summary to the user. Do not draft a comment about the missing reference.
+
+### Follow the ticket's references
+
+Read what the ticket points at, not just its summary:
+
+- The `References` links — specs, ADRs, runbooks, related tickets, incidents.
+- Notion via the `notion` MCP (`notion-fetch` takes the page **id** from the URL, not the URL).
+- Confluence via `confluence_get_page`.
+- Read the **sections the ticket names** (e.g. "sections 3.1, 3.2, 8.2"), plus the glossary and changelog of the spec.
+
+### What this context is for
+
+- **Acceptance criteria vs the diff.** Each criterion: met, partly met, or untestable as written. An unmet AC is a finding — comment on the line that would have to change, not in the overview.
+- **Prerequisites the ticket declares.** "Documentation update committed before implementation", "depends on CPL-995 merged" — check whether it actually happened. A spec's changelog / last revision date tells you if the agreed update landed.
+- **Spec citations in the code.** When a docstring or comment cites a spec section, open that section. Code claiming a contract the spec does not state — or states for a different level of the model — is a real finding, and often the most valuable one in the review.
+- **Decisions already settled in the ticket.** Architectural decisions and answered questions are not open for re-litigation in review comments. Do not suggest an approach the ticket explicitly rejected without acknowledging that it was rejected.
+- **Open questions the ticket flags.** If the ticket leaves a question open and the diff quietly answers it, that answer deserves a comment.
+
+Reference the ticket and spec precisely in drafts: ticket key, section number, revision or date. `Quark §8.2` and `CPL-1024 lists this as a prerequisite` are actionable; "per the spec" is not.
+
 ## What to comment on
 
 - Concrete technical findings with enough context to act on.
 - Open design choices and real edge cases.
+- Acceptance criteria the diff does not meet, and contracts the cited spec does not actually state.
 - Relationships between findings (see below).
 - Process notes that are not duplicated inline (e.g. rebase needed) — only in the overview.
 
 ### Do not comment on
 
-- Sparse or missing MR/PR descriptions — not a review problem.
+- Sparse or missing MR/PR descriptions, or a missing ticket reference — not a review problem.
+- The ticket's own wording or formatting — review the code, not the ticket.
+- Scope the ticket explicitly excludes, unless the diff silently depends on it.
 - Praise or blame of the author’s work (“Nice work”, “This is sloppy”, etc.). Overall judgment is for the human reviewer to write.
 - That the review is a draft / unpublished — the UI already shows that.
 - Merge conflicts between the source/current branch and the base/target branch — the UI already shows them and blocks merging until they are resolved.
@@ -171,7 +208,11 @@ Wdyt?
 
 - [ ] Comments are drafts only (not published) unless the user asked to submit
 - [ ] English (unless user requested another language)
-- [ ] No praise/blame overview; no draft meta; no MR-description nags; no source/base branch conflict comments
+- [ ] Ticket read (or its absence noted to the user); referenced spec sections opened, not assumed
+- [ ] Every acceptance criterion checked against the diff; unmet ones raised inline
+- [ ] Spec citations in the code verified against the actual section; prerequisites the ticket declares confirmed as done
+- [ ] Ticket key, section number and revision/date cited precisely in drafts — no vague "per the spec"
+- [ ] No praise/blame overview; no draft meta; no MR-description or missing-ticket nags; no source/base branch conflict comments
 - [ ] Overview does not duplicate inline topics; no overview title
 - [ ] Nits use `Nit: `; no other priority labels; bold used sparingly
 - [ ] Inclusive `we` voice; varied phrasing
