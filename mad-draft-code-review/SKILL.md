@@ -25,7 +25,7 @@ Default comment language: **English** (unless the user requests otherwise).
 2. Load the ticket and the docs it references — see [Ticket and documentation context](#ticket-and-documentation-context).
 3. Check out the branch (shallow clone is enough) and read the changed files whole, plus the code paths they contract with — writers of a field a resolver reads, callers of a changed signature. Diff-only review misses mismatches that live in unchanged code.
 4. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
-5. Create **draft** inline notes on concrete lines plus an optional general overview note.
+5. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
 6. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
 7. Show the user a short summary of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
 8. Iterate on wording when the user gives style feedback — update drafts in place; still do not publish unless asked.
@@ -41,14 +41,14 @@ PUT/DELETE  /projects/:id/merge_requests/:iid/draft_notes/:draft_note_id
 ```
 
 - General note: `{ "note": "…" }` (no `position`).
-- Inline note: include `position` with `base_sha`, `start_sha`, `head_sha`, `position_type: "text"`, `old_path`, `new_path`, and `new_line` (and/or `old_line`).
+- Inline note: include `position` with `base_sha`, `start_sha`, `head_sha`, `position_type: "text"`, `old_path`, `new_path`, and `new_line` (and/or `old_line`). The line must be a **changed** line in the MR diff — see [Anchor on diff lines](#anchor-on-diff-lines).
 - Prefer JSON body: `glab api --method POST … -H "Content-Type: application/json" --input <file.json>`.
 - Resolve SHAs from the MR `diff_refs`.
 - **Never** call publish / `bulk_publish` unless the user explicitly asks to submit.
 
 ### GitHub
 
-If the review target is GitHub, use `gh` pending-review APIs equivalently: create a pending review and comments; do not submit until asked.
+If the review target is GitHub, use `gh` pending-review APIs equivalently: create a pending review and comments; do not submit until asked. Same rule: only comment on lines in the PR diff ([Anchor on diff lines](#anchor-on-diff-lines)).
 
 ## Ticket and documentation context
 
@@ -72,7 +72,7 @@ Read what the ticket points at, not just its summary:
 
 ### What this context is for
 
-- **Acceptance criteria vs the diff.** Each criterion: met, partly met, or untestable as written. An unmet AC is a finding — comment on the line that would have to change, not in the overview.
+- **Acceptance criteria vs the diff.** Each criterion: met, partly met, or untestable as written. An unmet AC is a finding — anchor the draft on a related **changed** line (name the untouched symbol/path in the body if needed), not on an unchanged line and not only in the overview when a diff anchor exists.
 - **Prerequisites the ticket declares.** "Documentation update committed before implementation", "depends on CPL-995 merged" — check whether it actually happened. A spec's changelog / last revision date tells you if the agreed update landed.
 - **Spec citations in the code.** When a docstring or comment cites a spec section, open that section. Code claiming a contract the spec does not state — or states for a different level of the model — is a real finding, and often the most valuable one in the review.
 - **Decisions already settled in the ticket.** Architectural decisions and answered questions are not open for re-litigation in review comments. Do not suggest an approach the ticket explicitly rejected without acknowledging that it was rejected.
@@ -121,6 +121,16 @@ Resolve the fragment from the fetched doc (in-page TOC links, "Copy link to bloc
 - Omit the overview entirely if there is nothing left to say.
 
 ## Inline comments
+
+### Anchor on diff lines
+
+GitLab and GitHub only surface inline comments on lines that appear in the MR/PR **Changes** diff. A draft pinned to an **unchanged** line (including unchanged context around a hunk) is easy to create via the API but often **invisible** in the review UI.
+
+- Before posting an inline note, confirm the target line is **added, removed, or modified** in the current MR/PR diff (not merely present in the file or in hunk context).
+- Prefer `new_line` for added/modified lines on the new side; use `old_line` (alone or with the matching deletion) for removed lines.
+- Still **read** unchanged callers, writers, and contracts (workflow step 3). When the finding lives there, pin the draft to the **nearest related changed line** and name the unchanged symbol/path/line in the comment body. If no related changed line exists in any touched file, use a general overview note instead of an invisible inline.
+- Do **not** pick an arbitrary nearby context line just because it is close in the file — only lines that are themselves changed.
+- On re-review, new inline drafts follow the same rule against the **current** diff.
 
 ### Nit vs non-nit
 
@@ -242,6 +252,7 @@ Wdyt?
 ## Checklist before finishing
 
 - [ ] Comments are drafts only (not published) unless the user asked to submit
+- [ ] Every inline draft is on an added/removed/modified diff line (unchanged-code findings re-anchored or overview); no invisible unchanged-line pins
 - [ ] English (unless user requested another language)
 - [ ] Ticket read (or its absence noted to the user); referenced spec sections opened, not assumed
 - [ ] Every acceptance criterion checked against the diff; unmet ones raised inline
