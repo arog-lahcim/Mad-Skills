@@ -38,7 +38,7 @@ PUT /rest/api/3/issue/{issueKey}
 {"fields": {"description": <adf doc>}}
 ```
 
-Auth: Basic auth with `JIRA_USERNAME` + `JIRA_API_TOKEN` from the `mcp-atlassian` MCP config (`JIRA_URL` is the site base, e.g. `https://cledar.atlassian.net`).
+Auth: Basic auth with `JIRA_USERNAME` + `JIRA_API_TOKEN` from the `mcp-atlassian` MCP config (`JIRA_URL` is the site base, e.g. `https://example.atlassian.net`).
 
 **ADF mapping** from the schema below:
 
@@ -55,11 +55,11 @@ Root document: `{"version": 1, "type": "doc", "content": [...]}`.
 
 MCP is fine for read-only operations (search, get issue) and non-description fields (summary, epic link, transitions, issue links metadata). **Do not use MCP to set description bodies.**
 
-### Issue links — Blocks / is blocked by (Cledar Jira)
+### Issue links — Blocks / is blocked by
 
 Use link type `Blocks` so prerequisites show **blocks** dependents, and dependents show **is blocked by** prerequisites.
 
-**Create via REST** (`POST /rest/api/3/issueLink`). For “A blocks B” (A must finish before B) on **cledar.atlassian.net**, use:
+**Create via REST** (`POST /rest/api/3/issueLink`). For “A blocks B” (A must finish before B) on the configured Jira site, use:
 
 ```json
 {
@@ -69,7 +69,7 @@ Use link type `Blocks` so prerequisites show **blocks** dependents, and dependen
 }
 ```
 
-This is **intentional for this site’s UI**. Do **not** follow the common Atlassian doc example that puts the blocker in `outwardIssue` — that reverses labels in Cledar’s Linked work items UI.
+This is **intentional for this site’s UI**. Do **not** follow the common Atlassian doc example that puts the blocker in `outwardIssue` — that reverses labels in this site’s Linked work items UI.
 
 **Meaning:**
 
@@ -81,12 +81,12 @@ This is **intentional for this site’s UI**. Do **not** follow the common Atlas
 
 1. Open the prerequisite ticket in UI (or ask the user): Linked work must list dependents under **blocks**.
 2. Open a dependent ticket: Linked work must list the prerequisite under **is blocked by**.
-3. When reading `GET /rest/api/3/issue/{key}?fields=issuelinks` on this site, map fields to UI as follows (matches Cledar UI; opposite of many Atlassian blog examples):
+3. When reading `GET /rest/api/3/issue/{key}?fields=issuelinks` on this site, map fields to UI as follows (matches this site’s UI; opposite of many Atlassian blog examples):
    - `outwardIssue: Y` on X → UI on X shows **blocks** Y
    - `inwardIssue: Y` on X → UI on X shows **is blocked by** Y
 4. If UI is wrong, delete the link (`DELETE /rest/api/3/issueLink/{linkId}`) and recreate with the table above. Do not flip again based on docs without a UI check.
 
-**Do not** invent a second “fix” after a correct UI state. Trust the Cledar UI checklist above.
+**Do not** invent a second “fix” after a correct UI state. Trust the UI checklist above.
 
 ### Rank / backlog order (execution sequence)
 

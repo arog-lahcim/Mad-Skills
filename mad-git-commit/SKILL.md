@@ -1,7 +1,7 @@
 ---
 name: mad-git-commit
 description: >-
-  Create git commits using Cledar conventional-commit message rules. Use when
+  Create git commits using conventional-commit message rules. Use when
   the user asks to commit, write a commit message, stage and commit, or amend
   a commit message.
 ---
