@@ -5,8 +5,9 @@ description: >-
   with team-friendly voice, Nit labeling, cross-linked threads, and natural
   closers (Wdyt?, Does it make sense?). Grounds the review in the linked
   ticket's acceptance criteria and the specs it references. On re-review,
-  award ✅ and resolve threads that are properly fixed — do not leave
-  acknowledgment replies.
+  resolve fixed threads (award ✅ only when the author replied); do not leave
+  acknowledgment replies. When a review leaves no drafts and the MR looks
+  ready to merge, award ✅ on the MR itself.
   Use when the user asks to review a merge request or pull request, open a
   draft review, add review comments without publishing, or refine pending
   draft notes.
@@ -23,11 +24,12 @@ Default comment language: **English** (unless the user requests otherwise).
 1. Load MR/PR context: title, description, commits, CI, changed files, full diffs.
 2. Load the ticket and the docs it references — see [Ticket and documentation context](#ticket-and-documentation-context).
 3. Check out the branch (shallow clone is enough) and read the changed files whole, plus the code paths they contract with — writers of a field a resolver reads, callers of a changed signature. Diff-only review misses mismatches that live in unchanged code.
-4. Review for correctness, edge cases, API contracts, tests, merge risks (e.g. branch behind target), and unmet acceptance criteria.
+4. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
 5. Create **draft** inline notes on concrete lines plus an optional general overview note.
-6. Show the user a short summary of what was left as draft. Keep drafts unpublished.
-7. Iterate on wording when the user gives style feedback — update drafts in place; still do not publish unless asked.
-8. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review).
+6. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
+7. Show the user a short summary of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
+8. Iterate on wording when the user gives style feedback — update drafts in place; still do not publish unless asked.
+9. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
 
 ### GitLab (preferred when `glab` is available)
 
@@ -78,13 +80,25 @@ Read what the ticket points at, not just its summary:
 
 Reference the ticket and spec precisely in drafts: ticket key, section number, revision or date. `Quark §8.2` and `CPL-1024 lists this as a prerequisite` are actionable; "per the spec" is not.
 
+### Documentation links in drafts
+
+Whenever a draft cites documentation (Notion, Confluence, ADRs, runbooks, API specs), include a **visible deep link** to the exact section or paragraph whenever one exists — not only the document title or a bare `§7.3`.
+
+Format per `mad-visible-links`: human title (with section) then the full URL as plaintext (clickable). Prefer a heading / block fragment over the page root.
+
+```text
+Platform Data Query API §7.3 (Data Object Queries) https://app.notion.com/p/34c0f2e73c5b80a6a335e9b59bced433#34c0f2e73c5b81e7aa86d16674f9c948
+```
+
+Resolve the fragment from the fetched doc (in-page TOC links, "Copy link to block", or cross-links that already carry `#…`). If no block/heading URL is available after a reasonable look, link the page and keep the section name in the title — do not invent hashes.
+
 ## What to comment on
 
 - Concrete technical findings with enough context to act on.
 - Open design choices and real edge cases.
 - Acceptance criteria the diff does not meet, and contracts the cited spec does not actually state.
 - Relationships between findings (see below).
-- Process notes that are not duplicated inline (e.g. rebase needed) — only in the overview.
+- Process notes that are not duplicated inline — only in the overview (and only when they affect this change’s correctness or reviewability beyond what the UI already shows).
 
 ### Do not comment on
 
@@ -94,6 +108,7 @@ Reference the ticket and spec precisely in drafts: ticket key, section number, r
 - Praise or blame of the author’s work (“Nice work”, “This is sloppy”, etc.). Overall judgment is for the human reviewer to write.
 - That the review is a draft / unpublished — the UI already shows that.
 - Merge conflicts between the source/current branch and the base/target branch — the UI already shows them and blocks merging until they are resolved.
+- That the source branch is behind the target, or asking the author to rebase / merge target into the branch — GitLab/GitHub already surface divergence; it is not a review finding for this MR unless a concrete correctness issue in the diff depends on it (comment on that issue inline, not as a rebase ask).
 - Priority labels (`Low`, `Medium`, `High`, “nitpick priority”, etc.) except the `Nit:` prefix below.
 
 ## Overview (general) note
@@ -101,7 +116,8 @@ Reference the ticket and spec precisely in drafts: ticket key, section number, r
 - No title or heading — it is already a review of this MR/PR.
 - No praise or criticism of the work.
 - Do **not** restate topics covered by inline comments.
-- Keep only items that have no inline home (e.g. a rebase needed because the branch is behind the target).
+- Keep only items that have no inline home.
+- Do **not** use the overview to request a rebase or to note that the branch is behind the target (see [Do not comment on](#do-not-comment-on)).
 - Omit the overview entirely if there is nothing left to say.
 
 ## Inline comments
@@ -148,39 +164,58 @@ Only add emoji in comment **bodies** if the user asks for a friendlier tone. Whe
 - Use GitLab/GitHub emoji shortcodes (`:thinking:`, not a raw Unicode character).
 - When editing an existing draft note via the GitLab Draft Notes `PUT` endpoint, always resend the full `position` object together with `note` — sending `note` alone wipes the note's inline position.
 
-The ✅ award on a properly resolved re-review thread (below) is separate from this optional body-emoji mode — always apply it when a thread is fully addressed.
+The ✅ awards below (MR-level ready signal, and thread awards on re-review) are separate from this optional body-emoji mode — apply each only when its section says to.
+
+## Ready-to-merge signal
+
+After finishing the review (first pass or re-review), if **both** are true:
+
+1. This review left **no draft comments** — no inline notes and no overview note.
+2. The MR looks ready to merge — acceptance criteria met, no correctness / contract / test / merge-risk findings worth raising.
+
+…then award the check mark button emoji (`white_check_mark` / ✅) on the **merge request itself** (not on a note). Tell the user in the summary that you awarded it.
+
+GitLab:
+
+```text
+POST  /projects/:id/merge_requests/:iid/award_emoji
+      form: name=white_check_mark
+```
+
+**Do not** award MR-level ✅ if you left any drafts, or if the change is not merge-ready (even if you somehow left no comments). This is only an emoji reaction — it is **not** an approval, publish, or merge. Still do not approve / request changes / submit unless the user asks.
+
+GitHub PRs have no `white_check_mark` issue reaction — skip the MR-level award there; say so in the summary if the review was otherwise clean.
 
 ## Resolved threads on re-review
 
 When re-reviewing after author replies and/or new commits, check each open thread from prior review rounds against the current code.
 
+Ignore system notes when judging thread contents (e.g. GitLab “changed this line in version N”) — they are not author replies.
+
 **If the finding is properly resolved** (fix or agreed approach is in the diff / reply, nothing left to ask):
 
 - Do **not** leave an acknowledgment reply (“Looks good”, “Works for me”, etc.).
-- Award the check mark button emoji (`white_check_mark` / ✅) on the **latest note** in that discussion (usually the author’s reply).
 - Resolve the discussion.
+- Award the check mark button emoji (`white_check_mark` / ✅) on the **latest non-system note** in that discussion **only if the author (or another participant) replied** in the thread. That is usually the author’s reply.
+- If the thread still has only the reviewer’s own comment(s) — the fix landed in new commits with no discussion reply — **resolve only**; do **not** award ✅ on the reviewer’s own note.
 
 GitLab:
 
 ```text
+# When an author/participant reply exists:
 POST  /projects/:id/merge_requests/:iid/notes/:note_id/award_emoji
       form: name=white_check_mark
 
+# Always when fully resolved:
 PUT   /projects/:id/merge_requests/:iid/discussions/:discussion_id
       form: resolved=true
 ```
 
 **If the finding is only partly addressed**, leave a new draft (reply or fresh inline note) on what remains — do not resolve, do not award ✅.
 
-**If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still ✅ + resolve the original thread when that original ask is done.
+**If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still resolve the original thread when that original ask is done (and award ✅ on the author’s reply only if one exists).
 
 ## Example shapes
-
-Overview (process only):
-
-```text
-We could rebase onto current `master` (`pyproject` is already at `1.43.0` there; this branch locks `1.41.0`).
-```
 
 Doubt + suggestion:
 
@@ -212,11 +247,13 @@ Wdyt?
 - [ ] Every acceptance criterion checked against the diff; unmet ones raised inline
 - [ ] Spec citations in the code verified against the actual section; prerequisites the ticket declares confirmed as done
 - [ ] Ticket key, section number and revision/date cited precisely in drafts — no vague "per the spec"
-- [ ] No praise/blame overview; no draft meta; no MR-description or missing-ticket nags; no source/base branch conflict comments
-- [ ] Overview does not duplicate inline topics; no overview title
+- [ ] Doc citations use visible deep links to the exact section/paragraph when available (title + full URL; no title-only links)
+- [ ] No praise/blame overview; no draft meta; no MR-description or missing-ticket nags; no source/base conflict or rebase/behind-target comments
+- [ ] Overview does not duplicate inline topics; no overview title; no rebase asks
 - [ ] Nits use `Nit: `; no other priority labels; bold used sparingly
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
 - [ ] Emoji in comment bodies only if requested; not on every comment; varied, not repeated; skipped on serious findings; `PUT` updates include `position` alongside `note`
-- [ ] Re-review: properly resolved threads get ✅ (`white_check_mark`) on the latest note + discussion resolved — no acknowledgment reply drafts
+- [ ] No drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself; otherwise skip; never treat that as approval
+- [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
