@@ -4,13 +4,16 @@ description: >-
   Leave unpublished draft code-review comments on GitLab MRs (or GitHub PRs)
   with team-friendly voice, Nit labeling, cross-linked threads, and natural
   closers (Wdyt?, Does it make sense?). Grounds the review in the linked
-  ticket's acceptance criteria and the specs it references. On re-review,
-  resolve fixed threads (award ✅ only when the author replied); do not leave
-  acknowledgment replies. When a review leaves no drafts and the MR looks
-  ready to merge, award ✅ on the MR itself.
+  ticket's acceptance criteria and the specs it references. After posting,
+  summarize drafts and tell the user how to steer them (bullets under drafts,
+  then re-invoke this skill to apply). Never recreate drafts the user deleted
+  unless they explicitly ask. On re-review, resolve fixed threads (award ✅
+  only when the author replied); do not leave acknowledgment replies. When a
+  review leaves no drafts and the MR looks ready to merge, award ✅ on the MR
+  itself.
   Use when the user asks to review a merge request or pull request, open a
-  draft review, add review comments without publishing, or refine pending
-  draft notes.
+  draft review, add review comments without publishing, refine pending draft
+  notes, or apply edits / decisions left under existing drafts.
 ---
 
 # Draft Code Review
@@ -27,9 +30,10 @@ Default comment language: **English** (unless the user requests otherwise).
 4. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
 5. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
 6. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
-7. Show the user a short summary of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
-8. Iterate on wording when the user gives style feedback — update drafts in place; still do not publish unless asked.
-9. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
+7. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
+8. After that summary, always add a **short “what you can do now”** block — see [After posting drafts](#after-posting-drafts).
+9. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
+10. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
 
 ### GitLab (preferred when `glab` is available)
 
@@ -45,10 +49,47 @@ PUT/DELETE  /projects/:id/merge_requests/:iid/draft_notes/:draft_note_id
 - Prefer JSON body: `glab api --method POST … -H "Content-Type: application/json" --input <file.json>`.
 - Resolve SHAs from the MR `diff_refs`.
 - **Never** call publish / `bulk_publish` unless the user explicitly asks to submit.
+- When editing an existing draft via `PUT`, always resend the full `position` object together with `note` — sending `note` alone wipes the inline position.
 
 ### GitHub
 
 If the review target is GitHub, use `gh` pending-review APIs equivalently: create a pending review and comments; do not submit until asked. Same rule: only comment on lines in the PR diff ([Anchor on diff lines](#anchor-on-diff-lines)).
+
+## After posting drafts
+
+End the user-facing reply with two parts:
+
+1. **Summary** — brief list of draft topics / files (or “no drafts; ✅ on MR” when applicable).
+2. **What you can do now** — a few short lines only. Include at least:
+
+- Edit or **delete** any draft in the MR UI; deleted drafts stay gone.
+- Under a draft you want changed, append **bullet points** with decisions or rewrite instructions (e.g. `- yes, require ContainerSource — rewrite as a firm ask`). Free-form notes at the end of a draft also count.
+- Re-invoke this skill to apply those edits, for example:
+
+```text
+/mad-draft-code-review apply draft feedback on <MR URL>
+```
+
+Other valid phrasings: “apply my draft edits”, “update drafts from my bullets”, “process draft feedback” + the MR/PR link. Attaching this skill and pointing at the same MR is enough when the intent is clearly to apply feedback rather than start a full new review.
+
+Do **not** pad this block with publish/approve guidance unless the user asked how to submit.
+
+## Apply draft feedback
+
+When the user re-invokes this skill to apply feedback on existing drafts:
+
+1. `GET` current draft notes for the MR/PR. Treat that list as authoritative.
+2. **Never recreate** drafts the user deleted, and do not re-add topics from an earlier pass that are no longer present — unless the user **explicitly** asks to restore a specific comment.
+3. For each remaining draft that has user-added bullets or trailing notes:
+   - Read them as instructions/decisions for **that** comment.
+   - Rewrite the draft body to match (firm ask vs open question, scope, links, tone).
+   - **Remove** the instructional bullets / “update this comment” meta from the published-facing text.
+   - `PUT` the updated note **with full `position`** (GitLab) so the inline anchor is preserved.
+4. Leave drafts without new user marks unchanged.
+5. Do not start a full re-review of the diff unless the user also asked for one (new commits / re-review).
+6. Reply with a short summary of which drafts were updated (and which deleted ones were left deleted).
+
+Example: a draft ends with `- yes we do want to use ContainerSource … Update this comment.` → rewrite the body into a direct ask to use `ContainerSource` (with the cited links), drop the bullet, keep the same line anchor.
 
 ## Ticket and documentation context
 
@@ -172,7 +213,6 @@ Only add emoji in comment **bodies** if the user asks for a friendlier tone. Whe
 - Vary the emoji across comments; do not reuse the same one every time (e.g. don't default to `:thinking:` everywhere).
 - Match the emoji to the comment's nature: `:thinking:` for genuine uncertainty/doubt, `:bulb:` for a suggestion, `:slightly_smiling_face:` for a light nit or casual aside.
 - Use GitLab/GitHub emoji shortcodes (`:thinking:`, not a raw Unicode character).
-- When editing an existing draft note via the GitLab Draft Notes `PUT` endpoint, always resend the full `position` object together with `note` — sending `note` alone wipes the note's inline position.
 
 The ✅ awards below (MR-level ready signal, and thread awards on re-review) are separate from this optional body-emoji mode — apply each only when its section says to.
 
@@ -266,5 +306,7 @@ Wdyt?
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
 - [ ] Emoji in comment bodies only if requested; not on every comment; varied, not repeated; skipped on serious findings; `PUT` updates include `position` alongside `note`
+- [ ] After posting: short draft summary **plus** short “what you can do now” (bullets under drafts → re-invoke to apply; example call shown)
+- [ ] Apply-feedback pass: only update drafts that still exist; never recreate user-deleted drafts unless explicitly asked; strip instructional bullets from the final draft text
 - [ ] No drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself; otherwise skip; never treat that as approval
 - [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
