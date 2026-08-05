@@ -10,7 +10,8 @@ description: >-
   unless they explicitly ask. On re-review, resolve fixed threads (award ✅
   only when the author replied); do not leave acknowledgment replies. When a
   review leaves no drafts and the MR looks ready to merge, award ✅ on the MR
-  itself.
+  itself. Renames the chat to a fixed MR title format as soon as the MR is
+  identified.
   Use when the user asks to review a merge request or pull request, open a
   draft review, add review comments without publishing, refine pending draft
   notes, or apply edits / decisions left under existing drafts.
@@ -25,15 +26,35 @@ Default comment language: **English** (unless the user requests otherwise).
 ## Workflow
 
 1. Load MR/PR context: title, description, commits, CI, changed files, full diffs.
-2. Load the ticket and the docs it references — see [Ticket and documentation context](#ticket-and-documentation-context).
-3. Check out the branch (shallow clone is enough) and read the changed files whole, plus the code paths they contract with — writers of a field a resolver reads, callers of a changed signature. Diff-only review misses mismatches that live in unchanged code.
-4. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
-5. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
-6. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
-7. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
-8. After that summary, always add a **short “what you can do now”** block — see [After posting drafts](#after-posting-drafts).
-9. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
-10. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
+2. Rename the chat — see [Chat title](#chat-title). Do this as soon as the MR `iid` and author are known; do not wait for the review to finish.
+3. Load the ticket and the docs it references — see [Ticket and documentation context](#ticket-and-documentation-context).
+4. Check out the branch (shallow clone is enough) and read the changed files whole, plus the code paths they contract with — writers of a field a resolver reads, callers of a changed signature. Diff-only review misses mismatches that live in unchanged code.
+5. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
+6. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
+7. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
+8. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
+9. After that summary, always add a **short “what you can do now”** block — see [After posting drafts](#after-posting-drafts).
+10. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
+11. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
+
+## Chat title
+
+This skill is standing authorization to call `rename_chat` — do it without asking the user first.
+
+As soon as the MR is identified (and after the first user prompt of the chat has been sent — Cursor auto-naming overwrites titles set earlier), rename the chat to:
+
+```
+MR !<iid> (<JIRA-KEY>) - <MR author name> - <context>
+```
+
+- `<iid>` — GitLab MR `iid`, always prefixed with `!`.
+- `<JIRA-KEY>` — Jira key from the MR title, source branch, or description. Omit the parentheses entirely when the MR references no ticket.
+- `<MR author name>` — `author.name` of the MR (its creator); never the reviewer or the current user.
+- `<context>` — a few words for the work in this chat, e.g. `review`, `re-review`, `apply draft feedback`, `fix failing CI`.
+
+Separator is ` - ` (space, hyphen, space). Example: `MR !482 (PROJ-123) - Anna Kowalska - review`.
+
+Also rename on apply-feedback and re-review passes if the title is still wrong or missing the MR prefix.
 
 ### GitLab (preferred when `glab` is available)
 
@@ -291,6 +312,7 @@ Wdyt?
 
 ## Checklist before finishing
 
+- [ ] Chat renamed to `MR !<iid> (<JIRA-KEY>) - <author> - <context>` (or without `(<JIRA-KEY>)` when none); author is MR creator
 - [ ] Comments are drafts only (not published) unless the user asked to submit
 - [ ] Every inline draft is on an added/removed/modified diff line (unchanged-code findings re-anchored or overview); no invisible unchanged-line pins
 - [ ] English (unless user requested another language)
