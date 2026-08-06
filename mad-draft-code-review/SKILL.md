@@ -12,8 +12,9 @@ description: >-
   unless they explicitly ask. On re-review, resolve fixed threads (award ✅
   only when the author replied); do not leave acknowledgment replies. When a
   review leaves no drafts and the MR looks ready to merge, award ✅ on the MR
-  itself. Renames the chat to a fixed MR title format as soon as the MR is
-  identified.
+  itself. If a re-review instead leaves new required-change drafts, remove any
+  prior MR-level ✅ and replace it with 💬 (`speech_balloon`). Renames the chat
+  to a fixed MR title format as soon as the MR is identified.
   Use when the user asks to review a merge request or pull request, open a
   draft review, add review comments without publishing, refine pending draft
   notes, or apply edits / decisions left under existing drafts.
@@ -33,11 +34,11 @@ Default comment language: **English** (unless the user requests otherwise).
 4. Check out the branch (shallow clone is enough) and read the changed files whole, plus the code paths they contract with — writers of a field a resolver reads, callers of a changed signature. Diff-only review misses mismatches that live in unchanged code.
 5. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
 6. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
-7. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
-8. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
+7. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If this is a **re-review** that left new drafts for required changes, follow [Needs-work signal](#needs-work-signal) instead.
+8. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ / 💬 was set on the MR). Keep drafts unpublished.
 9. After that summary, say briefly how to steer the drafts, then **ask what to do next as an interactive question** — see [After posting drafts](#after-posting-drafts).
 10. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
-11. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
+11. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If it leaves new drafts for required changes, follow [Needs-work signal](#needs-work-signal).
 
 ## Chat title
 
@@ -290,11 +291,16 @@ After finishing the review (first pass or re-review), if **both** are true:
 1. This review left **no draft comments** — no inline notes and no overview note.
 2. The MR looks ready to merge — acceptance criteria met, no correctness / contract / test / merge-risk findings worth raising.
 
-…then award the check mark button emoji (`white_check_mark` / ✅) on the **merge request itself** (not on a note). Tell the user in the summary that you awarded it.
+…then award the check mark button emoji (`white_check_mark` / ✅) on the **merge request itself** (not on a note). If a prior `speech_balloon` / 💬 is present from [Needs-work signal](#needs-work-signal), **delete that award first**, then award ✅. Tell the user in the summary that you awarded it.
 
 GitLab:
 
 ```text
+# If a prior needs-work balloon exists, remove it first:
+GET     /projects/:id/merge_requests/:iid/award_emoji
+DELETE  /projects/:id/merge_requests/:iid/award_emoji/:award_id
+        # only for name=speech_balloon awarded by the current user
+
 POST  /projects/:id/merge_requests/:iid/award_emoji
       form: name=white_check_mark
 ```
@@ -302,6 +308,29 @@ POST  /projects/:id/merge_requests/:iid/award_emoji
 **Do not** award MR-level ✅ if you left any drafts, or if the change is not merge-ready (even if you somehow left no comments). This is only an emoji reaction — it is **not** an approval, publish, or merge. Still do not approve / request changes / submit unless the user asks.
 
 GitHub PRs have no `white_check_mark` issue reaction — skip the MR-level award there; say so in the summary if the review was otherwise clean.
+
+## Needs-work signal
+
+After a **re-review**, if this pass left **new draft comments for required changes** (the MR is no longer merge-ready — any draft that would block [Ready-to-merge signal](#ready-to-merge-signal), including non-`Nit:` findings; pure optional nits alone do not trigger this), and the MR currently has a `white_check_mark` / ✅ from an earlier ready signal:
+
+1. **Delete** the current user's MR-level `white_check_mark` award.
+2. **Award** the speech balloon button emoji (`speech_balloon` / 💬) on the **merge request itself**.
+3. Tell the user in the summary that ✅ was replaced with 💬 because new required changes were drafted.
+
+Do **not** leave both ✅ and 💬 on the MR. Do **not** add 💬 on a first-pass review that never had ✅ — only when clearing a prior ready signal after a re-review found more required work.
+
+GitLab:
+
+```text
+GET     /projects/:id/merge_requests/:iid/award_emoji
+DELETE  /projects/:id/merge_requests/:iid/award_emoji/:award_id
+        # only for name=white_check_mark awarded by the current user
+
+POST  /projects/:id/merge_requests/:iid/award_emoji
+      form: name=speech_balloon
+```
+
+If there was no prior ✅, skip the delete; still skip adding 💬 unless a prior ready signal is being withdrawn. GitHub: skip MR-level reaction swap (same limitation as ready-to-merge).
 
 ## Resolved threads on re-review
 
@@ -382,5 +411,6 @@ Wdyt?
 - [ ] After posting: short draft summary **plus** two lines on steering drafts (edit/delete in UI, bullets under a draft)
 - [ ] Pass ends with an interactive `AskQuestion` (single choice, ≤4 applicable options, recommended first) — not a prose list of next steps; answer acted on in the same chat
 - [ ] Apply-feedback pass: only update drafts that still exist; never recreate user-deleted drafts unless explicitly asked; strip instructional bullets from the final draft text
-- [ ] No drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself; otherwise skip; never treat that as approval
+- [ ] No drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself (remove prior 💬 first if present); otherwise skip; never treat that as approval
+- [ ] Re-review left required-change drafts after a prior ✅ → delete MR-level `white_check_mark`, award `speech_balloon` / 💬 instead; do not leave both
 - [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
