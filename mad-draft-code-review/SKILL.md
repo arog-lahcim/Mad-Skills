@@ -5,8 +5,10 @@ description: >-
   with team-friendly voice, Nit labeling, cross-linked threads, and natural
   closers (Wdyt?, Does it make sense?). Grounds the review in the linked
   ticket's acceptance criteria and the specs it references. After posting,
-  summarize drafts and tell the user how to steer them (bullets under drafts,
-  then re-invoke this skill to apply). Never recreate drafts the user deleted
+  summarize drafts, explain how to steer them (bullets under drafts), and end
+  every pass by asking the user what to do next as an interactive
+  multiple-choice question instead of listing options in prose. Never recreate
+  drafts the user deleted
   unless they explicitly ask. On re-review, resolve fixed threads (award ✅
   only when the author replied); do not leave acknowledgment replies. When a
   review leaves no drafts and the MR looks ready to merge, award ✅ on the MR
@@ -33,7 +35,7 @@ Default comment language: **English** (unless the user requests otherwise).
 6. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
 7. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
 8. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ was awarded on the MR). Keep drafts unpublished.
-9. After that summary, always add a **short “what you can do now”** block — see [After posting drafts](#after-posting-drafts).
+9. After that summary, say briefly how to steer the drafts, then **ask what to do next as an interactive question** — see [After posting drafts](#after-posting-drafts).
 10. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
 11. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal).
 
@@ -78,14 +80,33 @@ If the review target is GitHub, use `gh` pending-review APIs equivalently: creat
 
 ## After posting drafts
 
-End the user-facing reply with two parts:
+End the user-facing reply with three parts, in this order:
 
 1. **Summary** — brief list of draft topics / files (or “no drafts; ✅ on MR” when applicable).
-2. **What you can do now** — a few short lines only. Include at least:
+2. **How to steer the drafts** — two short lines, no more:
 
 - Edit or **delete** any draft in the MR UI; deleted drafts stay gone.
 - Under a draft you want changed, append **bullet points** with decisions or rewrite instructions (e.g. `- yes, require ContainerSource — rewrite as a firm ask`). Free-form notes at the end of a draft also count.
-- Re-invoke this skill to apply those edits, for example:
+
+3. **Closing question** — ask what to do next interactively; do **not** list next steps as prose bullets.
+
+### Closing question
+
+Every pass (first review, apply-feedback, re-review) ends by **asking**, never with a bare list of options. Prefer the multiple-choice question tool (`AskQuestion`) so the user picks instead of retyping a command. If that tool is unavailable in the current environment, ask the same question in the chat reply as a short numbered choice the user can answer by number or label — still a question, not a prose bullet list of “what you can do”.
+
+Offer only the steps that apply to this pass, e.g.:
+
+- `Apply my draft edits now` — re-run [Apply draft feedback](#apply-draft-feedback) in this chat. Recommended whenever drafts exist.
+- `Re-review the latest commits` — fresh pass against the current diff.
+- `Publish the drafts as a review` — picking this **is** the explicit go-ahead to publish; without it, never publish.
+- `Nothing for now — I'll edit in the MR UI`.
+
+Rules:
+
+- One question, single choice, at most four options; recommended option first, suffixed `(Recommended)`.
+- Drop options that make no sense for the pass — no apply/publish option when nothing was drafted, no re-review option when no new commits are plausible yet.
+- Act on the answer in the same chat rather than restating it: an apply choice runs the apply pass, a re-review choice starts a new round.
+- Keep the typed equivalent working for users who prefer text:
 
 ```text
 /mad-draft-code-review apply draft feedback on <MR URL>
@@ -93,7 +114,7 @@ End the user-facing reply with two parts:
 
 Other valid phrasings: “apply my draft edits”, “update drafts from my bullets”, “process draft feedback” + the MR/PR link. Attaching this skill and pointing at the same MR is enough when the intent is clearly to apply feedback rather than start a full new review.
 
-Do **not** pad this block with publish/approve guidance unless the user asked how to submit.
+Beyond the single publish option, do **not** pad the closing question or the reply with publish/approve guidance unless the user asked how to submit.
 
 ## Apply draft feedback
 
@@ -105,10 +126,11 @@ When the user re-invokes this skill to apply feedback on existing drafts:
    - Read them as instructions/decisions for **that** comment.
    - Rewrite the draft body to match (firm ask vs open question, scope, links, tone).
    - **Remove** the instructional bullets / “update this comment” meta from the published-facing text.
+   - End the rewritten body with `🤖+🧑‍💻` alone on its final line (see [Robot signature](#robot-signature-required)).
    - `PUT` the updated note **with full `position`** (GitLab) so the inline anchor is preserved.
 4. Leave drafts without new user marks unchanged.
 5. Do not start a full re-review of the diff unless the user also asked for one (new commits / re-review).
-6. Reply with a short summary of which drafts were updated (and which deleted ones were left deleted).
+6. Reply with a short summary of which drafts were updated (and which deleted ones were left deleted), then close with the interactive question — see [Closing question](#closing-question).
 
 Example: a draft ends with `- yes we do want to use ContainerSource … Update this comment.` → rewrite the body into a direct ask to use `ContainerSource` (with the cited links), drop the bullet, keep the same line anchor.
 
@@ -225,17 +247,41 @@ Vary the closer across a review — do not reuse the same phrase (e.g. `Does it 
 
 **Do not use:** `LMK`, long closing sentences for decisions (`Curious what you'd prefer.`, `Thoughts?`, etc.), or closers on clear consistency fixes / soft docs asks where the decision already lives on a related thread.
 
-### Emoji (optional, off by default)
+### Robot signature (required)
 
-Only add emoji in comment **bodies** if the user asks for a friendlier tone. When enabled:
+Every draft this skill writes — inline and overview, first pass and apply-feedback rewrite — ends with a signature alone on its **own final line**, after a blank line (same spacing as a closer).
+
+| When | Signature |
+| --- | --- |
+| Agent-only draft (no human edit of this comment yet) | `🤖` |
+| Human-adjusted — apply-feedback rewrite from bullets/notes under the draft, or any rewrite that incorporates reviewer decisions on that comment | `🤖+🧑‍💻` |
+| Result of discussion — draft or published note that reflects an author/reviewer exchange (re-review follow-up, reply that closes or continues a thread with agreed wording) | `🤖+🧑‍💻` |
+
+```text
+🤖
+```
+
+```text
+🤖+🧑‍💻
+```
+
+- Do **not** put the signature mid-paragraph, on the same line as a closer, or omit it.
+- Use the Unicode emoji (`🤖`, `🧑‍💻`) — not `:robot:` / `:technologist:` shortcodes.
+- Apply-feedback `PUT`s: strip instructional bullets, then end with `🤖+🧑‍💻` (never leave a bare `🤖` after a human-steered rewrite).
+- Re-review drafts that only restate an unresolved agent finding stay `🤖`; if the new wording encodes a decision from the thread or from human draft marks, use `🤖+🧑‍💻`.
+- When editing a **published** note the same rules apply: human-adjusted or discussion-derived bodies get `🤖+🧑‍💻`.
+
+### Emoji in the body (optional, off by default)
+
+Only add emoji in comment **bodies** (aside from the required signature) if the user asks for a friendlier tone. When enabled:
 
 - Not on every comment — leave plain the ones on serious findings (security, auth, data loss, migrations/infra risk).
-- At most one emoji per comment, placed at the very end (after the closer, or after the last sentence if there's no closer) — never mid-paragraph.
-- Vary the emoji across comments; do not reuse the same one every time (e.g. don't default to `:thinking:` everywhere).
+- At most one body emoji per comment, placed just before the signature line (after the closer, or after the last sentence if there's no closer) — never mid-paragraph, never after the signature.
+- Vary the body emoji across comments; do not reuse the same one every time (e.g. don't default to `:thinking:` everywhere).
 - Match the emoji to the comment's nature: `:thinking:` for genuine uncertainty/doubt, `:bulb:` for a suggestion, `:slightly_smiling_face:` for a light nit or casual aside.
-- Use GitLab/GitHub emoji shortcodes (`:thinking:`, not a raw Unicode character).
+- Use GitLab/GitHub emoji shortcodes for body emoji (`:thinking:`, not a raw Unicode character). The required signature stays `🤖` or `🤖+🧑‍💻`.
 
-The ✅ awards below (MR-level ready signal, and thread awards on re-review) are separate from this optional body-emoji mode — apply each only when its section says to.
+The ✅ awards below (MR-level ready signal, and thread awards on re-review) are separate from body emoji and from the signature — apply each only when its section says to.
 
 ## Ready-to-merge signal
 
@@ -298,6 +344,8 @@ That fits computed `array_map` / `named_struct` results, but it also rewrites le
 We could decode only when the projection used a nested reshape, and leave plain path projections alone.
 
 Does it make sense?
+
+🤖
 ```
 
 Open choice with related thread:
@@ -308,6 +356,8 @@ Nit: Nested child `name`s are resolved with `apply_path(root, child.name)`, so t
 Related to the nit on `Projection.projections` in `types.py`: documenting relative `name`s there may be enough. Alternatively, we could reject parent-prefixed paths here — if we do that, the docs-only nit becomes less important.
 
 Wdyt?
+
+🤖
 ```
 
 ## Checklist before finishing
@@ -327,8 +377,10 @@ Wdyt?
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
-- [ ] Emoji in comment bodies only if requested; not on every comment; varied, not repeated; skipped on serious findings; `PUT` updates include `position` alongside `note`
-- [ ] After posting: short draft summary **plus** short “what you can do now” (bullets under drafts → re-invoke to apply; example call shown)
+- [ ] Every draft (inline and overview) ends with `🤖` or `🤖+🧑‍💻` alone on its final line after a blank line — use `🤖+🧑‍💻` after human apply-feedback or discussion-derived wording; apply-feedback rewrites always use `🤖+🧑‍💻`
+- [ ] Body emoji only if requested; not on every comment; varied, not repeated; skipped on serious findings; never after the signature; `PUT` updates include `position` alongside `note`
+- [ ] After posting: short draft summary **plus** two lines on steering drafts (edit/delete in UI, bullets under a draft)
+- [ ] Pass ends with an interactive `AskQuestion` (single choice, ≤4 applicable options, recommended first) — not a prose list of next steps; answer acted on in the same chat
 - [ ] Apply-feedback pass: only update drafts that still exist; never recreate user-deleted drafts unless explicitly asked; strip instructional bullets from the final draft text
 - [ ] No drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself; otherwise skip; never treat that as approval
 - [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
