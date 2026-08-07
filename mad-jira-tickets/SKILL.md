@@ -1,6 +1,6 @@
 ---
 name: mad-jira-tickets
-description: Create and update Jira tickets with action-verb summaries and ADF descriptions (user story, References, Acceptance Criteria); set Blocks links and Rank order via REST. Use when creating, updating, or reformatting Jira issues, writing ticket descriptions, linking dependencies, ranking backlog order, or submitting descriptions via the Jira Cloud REST API.
+description: Create and update Jira tickets with action-verb summaries and ADF descriptions (user story for Stories/Tasks; flexible bug layout with Evidence; References; Acceptance Criteria); set Blocks links and Rank order via REST. Use when creating, updating, or reformatting Jira issues (including Bugs), writing ticket descriptions, linking dependencies, ranking backlog order, or submitting descriptions via the Jira Cloud REST API.
 ---
 
 # Jira Tickets
@@ -15,7 +15,16 @@ Wrap all code-like text in inline code marks: variable names, field names, table
 
 ## Jira tickets
 
-Every Jira ticket must have a `Summary` (title) and a `Description` built according to the schema below.
+Every Jira ticket must have a `Summary` (title) and a `Description` submitted as ADF via REST (see below).
+
+**Issue-type layout:**
+
+| Issue type | Opening | Required sections | Optional |
+| --- | --- | --- | --- |
+| Story, Task, and similar feature/work items | User story (`As a` / `I want` / `So that`) — **required** | `# Acceptance Criteria` | `# Evidence`, `# References` |
+| Bug | Problem-first opening — **not** forced into a user story | `# Acceptance Criteria` | `# Evidence` (strongly preferred), `# References`, user story only when it fits |
+
+The sections below under “User story at the start of the description” are the **default for Stories/Tasks**. For Bugs, follow **Bug tickets** instead — do not stretch a defect into an awkward user story just to match the Story/Task template.
 
 ### Ticket title (Summary)
 
@@ -38,13 +47,16 @@ PUT /rest/api/3/issue/{issueKey}
 {"fields": {"description": <adf doc>}}
 ```
 
-Auth: Basic auth with `JIRA_USERNAME` + `JIRA_API_TOKEN` from the `mcp-atlassian` MCP config (`JIRA_URL` is the site base, e.g. `https://example.atlassian.net`).
+Auth: Basic auth with `JIRA_USERNAME` + `JIRA_API_TOKEN` from the `mcp-atlassian` MCP config (`JIRA_URL` is the site base from that config — do not hardcode a host).
 
 **ADF mapping** from the schema below:
 
 | Schema element | ADF node |
 | --- | --- |
-| User story (3 lines, one block) | `paragraph` with `hardBreak` between lines; labels `As a`, `I want`, `So that` use `strong` marks; label and rest of line in the same text run — no `hardBreak` after a label |
+| User story (3 lines, one block; Stories/Tasks required, Bugs optional) | `paragraph` with `hardBreak` between lines; labels `As a`, `I want`, `So that` use `strong` marks; label and rest of line in the same text run — no `hardBreak` after a label |
+| Bug opening (when no user story) | one or more `paragraph` nodes — expected vs actual / where it fails; no persona formula required |
+| `# Evidence` | `heading` attrs `level: 1`, text `Evidence` (omit section if none; strongly preferred on Bugs) |
+| Warning / log / traceback body | `codeBlock` with `attrs.language` (e.g. `text`) and a single `text` child — paste the **full** user-provided output verbatim |
 | `# References` | `heading` attrs `level: 1`, text `References` |
 | Reference bullet + link | `bulletList` → `listItem` → `paragraph` with `text` + `link` mark |
 | `# Acceptance Criteria` | `heading` attrs `level: 1`, text `Acceptance Criteria` |
@@ -128,9 +140,54 @@ When reformatting a ticket to match this schema — ADF structure, bold user-sto
 
 Before submitting an update, compare the new description against the current issue and confirm every fact, link, and criterion is still present.
 
-### User story at the start of the description
+### Bug tickets
 
-The description starts **directly** with the user story formula. Nothing may precede it — no heading, intro, or other content.
+Use issue type `Bug`. Summary still starts with an action verb — prefer `Fix` (or `Investigate` when root cause is unknown).
+
+Bugs describe a defect, not planned feature work. **Do not require** the Story/Task user-story block. A forced `As a` / `I want` / `So that` often reads fake for regressions, CI breaks, or infra failures.
+
+**When a user story is appropriate for a Bug:** use it only if it states a clear persona, desired restored behavior, and business impact without padding — e.g. “CI must build image X after runner Y changed so merges publish artifacts.” If that formula feels forced, skip it.
+
+**Default Bug description layout** (ADF via REST; omit unused optional sections):
+
+```
+<opening — see below>
+
+# Evidence
+...
+# References
+...
+# Acceptance Criteria
+...
+```
+
+**Opening** (starts the description; nothing before it):
+
+1. **Preferred when no natural user story:** 1–3 short paragraphs — what fails, where (env / pipeline / job / component), expected vs actual. Lead with the broken behavior, not a persona.
+2. **Optional user story:** only when it fits cleanly (same ADF rules as Stories/Tasks: one paragraph, `strong` labels, `hardBreak` between lines). Example that fits: restoring `master` CI after a runner change so merges publish images. Example that does not: inventing a persona for a null-pointer in a library.
+
+**Evidence** (strongly preferred for Bugs):
+
+- Include failing job/pipeline logs, stack traces, assertions, or repro output under `# Evidence` as an ADF `codeBlock`.
+- Prefer full user-provided or investigation-captured output over paraphrase.
+- Add brief root-cause bullets after the code block when known (runner change, missing var, bad pin) — keep them factual.
+
+**References:** same rules as other tickets — URL-reachable sources only (failing pipeline, job log, commit that changed behavior, related MR).
+
+**Acceptance Criteria** for Bugs = verifiable fix outcomes, not feature scope. Prefer:
+
+- Failing job/pipeline/path succeeds (or fails for the right reason)
+- Root cause addressed (not only a flaky retry)
+- Related skipped downstream jobs unblocked when relevant
+- Regression signal if useful (re-run on `master`, specific change path)
+
+**Do not** invent epic links for Bugs unless the user asks. Create under the requested project (e.g. `CPL`) with type `Bug` and leave epic/parent unset by default.
+
+### User story at the start of the description (Stories / Tasks)
+
+For Stories, Tasks, and similar feature/work items, the description starts **directly** with the user story formula. Nothing may precede it — no heading, intro, or other content.
+
+For Bugs, see **Bug tickets** — user story is optional and must not be forced.
 
 The three user story lines form **one block** — a single paragraph in Jira. Use exactly one newline (`\n`) between lines. **Never** insert a blank line between them; a blank line becomes `\n\n` in Jira and splits the block into separate paragraphs.
 
@@ -174,6 +231,8 @@ Logical layout (implement in ADF as described above — do not send this Markdow
 **I want** <what should be done>
 **So that** <problem solved / business value>
 
+# Evidence
+...
 # References
 ...
 # Acceptance Criteria
@@ -184,9 +243,23 @@ Use `I want` for a single person or user perspective; `We want` when the ticket 
 
 The formula must answer **why** the work is needed — not only **what** should be done.
 
+### Evidence (warnings, logs, traces)
+
+When the user provides diagnostic output that motivates the ticket — warnings, stack traces, log excerpts, exception dumps, failing assertions, or similar — include it in the description under a level-one heading after the opening (user story for Stories/Tasks, or the Bug problem statement) and before References:
+
+```
+# Evidence
+```
+
+Paste the **full** user-provided text in an ADF `codeBlock` (do not summarize, truncate, or rephrase). Preserve paths, line numbers, indentation, and wording exactly.
+
+Omit the `Evidence` section when the user did not supply such output.
+
+Do not put multi-line traces only in References or Acceptance Criteria — those sections may cite them, but the raw output belongs under `Evidence`.
+
 ### Source links and references
 
-When possible, add a level-one heading after the user story and before Acceptance Criteria:
+When possible, add a level-one heading after the opening (and after `Evidence`, if present) and before Acceptance Criteria:
 
 ```
 # References
@@ -204,7 +277,7 @@ Typical sources:
 
 Use descriptive link text or a short label per item (e.g. `ADR-12: Spark empty-file handling`). One line per reference; no narrative between items.
 
-Only include references reachable via a URL. Do not list transcripts added manually to the LLM context, or any other source that cannot be accessed through a URL.
+Only include URL references under `References`. Raw warnings/logs/traces go under `Evidence`, even when they came from chat context rather than a URL.
 
 Do not list the parent ticket or parent item — Jira already links it.
 
@@ -235,6 +308,10 @@ In instructions, references, and acceptance criteria, format every identifier as
 **I want** Spark offloading jobs to skip empty objects instead of failing
 **So that** nightly pipelines complete reliably when upstream sends zero-byte files
 
+# Evidence
+
+org.apache.spark.SparkException: Job aborted due to stage failure: empty object at s3://bucket/path/file.parquet
+
 # References
 
 - [INC-4521](https://jira.example.com/browse/INC-4521) — nightly job failed on zero-byte S3 objects
@@ -248,17 +325,48 @@ In instructions, references, and acceptance criteria, format every identifier as
 - [ ] Unit tests cover the empty-object case
 ```
 
+In ADF, the Evidence body is a `codeBlock` (not a plain paragraph), even when shown as indented text in Markdown examples.
+
+### Example of a Bug description (problem-first, no user story)
+
+```
+master pipeline #41 fails on build-hms-image: COPY --chmod requires BuildKit, but the basement runner builds without it. Last good master (#35) used cledar-docker with BuildKit. MR pipelines stay green because they skip image builds.
+
+adls-preview-scripts also fails when spark/** changes: ADLS_ACCOUNT is unset.
+
+# Evidence
+
+COPY --chmod=755 run.sh run.sh
+the --chmod option requires BuildKit.
+...
+ADLS_ACCOUNT: Missing ADLS_ACCOUNT
+
+# References
+
+- Failing master pipeline #41 https://gitlab.example.com/.../pipelines/2737075600
+- common-ci basement default https://gitlab.example.com/.../commit/33a7af67
+
+# Acceptance Criteria
+
+- [ ] build-hms-image succeeds on basement
+- [ ] adls-preview-scripts has ADLS_* vars or fails open when absent
+- [ ] master pipeline touching spark/** and HMS completes without these two failures
+```
+
+Use a Bug user story instead of the problem-first opening only when it is natural (persona + restored behavior + impact). Do not rewrite the example above into a user story for its own sake.
+
 ### Checklist before creating or updating a ticket
 
 - [ ] Text is in English (unless the user specified otherwise)
-- [ ] Summary starts with an action verb (`Implement`, `Check`, `Validate`, `Research`, etc.)
+- [ ] Summary starts with an action verb (`Implement`, `Check`, `Validate`, `Research`, `Fix`, etc.)
 - [ ] Description submitted via REST API v3 as ADF — not via MCP description field
 - [ ] Description is concise with high information density — no fluff
-- [ ] Description starts with `**As a**...` / `**I want**...` / `**So that**...` with no preceding heading
-- [ ] User story labels use `strong` marks in ADF
-- [ ] Each user story line keeps label and text on one line — no line break after `As a` / `I want` / `So that`
-- [ ] User story is one ADF paragraph with `hardBreak` between complete lines — not three separate paragraphs
-- [ ] User story explains the business rationale
+- [ ] Issue type chosen correctly: `Bug` for defects; Story/Task schema for feature/work items
+- [ ] **Stories/Tasks:** description starts with `**As a**...` / `**I want**...` / `**So that**...` with no preceding heading
+- [ ] **Stories/Tasks:** user story labels use `strong` marks in ADF; label + text on one line; one ADF paragraph with `hardBreak` between lines; explains business rationale
+- [ ] **Bugs:** opening is problem-first (or a natural user story only if it fits — never forced); no epic/parent unless requested
+- [ ] **Bugs:** `Evidence` included when logs/traces/repro exist (`codeBlock`, not paraphrased away)
+- [ ] If the user supplied warnings/logs/traces: `Evidence` H1 + full verbatim `codeBlock` (not summarized)
 - [ ] `References` H1 and linked bullet list present when useful (omitted otherwise)
 - [ ] Description ends with `Acceptance Criteria` H1 and `taskList` checkboxes
 - [ ] All code-like identifiers use inline code marks (`code` in ADF) — not plain text
