@@ -342,7 +342,21 @@ When re-reviewing after author replies and/or new commits, check each open threa
 
 Ignore system notes when judging thread contents (e.g. GitLab “changed this line in version N”) — they are not author replies.
 
-**If the finding is properly resolved** (fix or agreed approach is in the diff / reply, nothing left to ask):
+### Do not resolve while answering
+
+**Never resolve** a discussion when any of these are true:
+
+- An unpublished **draft reply** on that discussion still exists (including one you are about to create or just created).
+- The author (or another participant) asked a **follow-up question** and this pass is preparing or leaving an answer — even if the original finding looks fixed in the diff.
+- The thread still needs a visible decision / clarification after publish.
+
+Resolved threads hide new replies in the default GitLab UI. Publishing an answer onto an already-resolved discussion makes that answer easy to miss. If the code fix is done but a question remains, leave the discussion **unresolved**, post the draft answer, and only resolve later once the answer is published **and** nothing further is pending on that thread.
+
+If a discussion was resolved too early and you still need to answer on it: **unresolve** it first (`resolved=false`), then leave or update the draft reply.
+
+### When the finding is fully done
+
+**If the finding is properly resolved** (fix or agreed approach is in the diff / reply, **nothing left to ask**, and no draft reply is pending on the thread):
 
 - Do **not** leave an acknowledgment reply (“Looks good”, “Works for me”, etc.).
 - Resolve the discussion.
@@ -356,14 +370,18 @@ GitLab:
 POST  /projects/:id/merge_requests/:iid/notes/:note_id/award_emoji
       form: name=white_check_mark
 
-# Always when fully resolved:
+# Only when fully done — no pending answer/draft on this thread:
 PUT   /projects/:id/merge_requests/:iid/discussions/:discussion_id
       form: resolved=true
+
+# Undo an early resolve before answering:
+PUT   /projects/:id/merge_requests/:iid/discussions/:discussion_id
+      form: resolved=false
 ```
 
 **If the finding is only partly addressed**, leave a new draft (reply or fresh inline note) on what remains — do not resolve, do not award ✅.
 
-**If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still resolve the original thread when that original ask is done (and award ✅ on the author’s reply only if one exists).
+**If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still resolve the original thread when that original ask is done **and** no follow-up answer is pending (and award ✅ on the author’s reply only if one exists).
 
 ## Example shapes
 
@@ -418,3 +436,4 @@ Wdyt?
 - [ ] No drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself (remove prior 💬 first if present); otherwise skip; never treat that as approval
 - [ ] Re-review left required-change drafts after a prior ✅ → delete MR-level `white_check_mark`, award `speech_balloon` / 💬 instead; do not leave both
 - [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
+- [ ] Never resolve a discussion that still has a pending draft reply or an unanswered follow-up being answered; unresolve first if an early resolve would hide the published answer
