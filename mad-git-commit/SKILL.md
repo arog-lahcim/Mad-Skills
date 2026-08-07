@@ -36,6 +36,23 @@ Allowed forms (must match):
 
 **Create a clean commit on the first attempt.** The commit message must contain only the intended conventional-commit subject and body. Do not record Cursor or any other AI/agent as a co-author or contributor, including trailers such as `Co-authored-by` or `Made-with`.
 
+### Atomic commits (required)
+
+**Prefer the smallest commits that still stand alone.** Each commit should cover one independent change so history stays clear and bisect/review stay useful.
+
+Before staging, group the working tree by **origin of change** — separate concerns, skills, features, or fixes — and commit each group on its own when practical:
+
+| Situation | What to do |
+| --- | --- |
+| Two unrelated skills / packages / areas changed | **Two commits** — one per area; never squash them into one “batch” message |
+| One skill/file has two unrelated edits (e.g. new feature + unrelated typo fix elsewhere in the same file) | Prefer **two commits** if the hunks split cleanly; otherwise one commit and say so in the subject |
+| Same logical change touches several files | **One commit** — keep them together |
+| User asked to commit everything at once | Still split by independent origin when you can explain each commit; only combine when the changes are one unit |
+
+Do **not** invent a single umbrella subject that hides unrelated work (e.g. one `feat:` covering two skills). Inspect `git diff` per path and ask: “Would a reviewer want these on separate commits?” If yes, split.
+
+When rewriting a mixed commit the user asked to fix (unpushed / amend-safe), reset and re-commit **atomically** rather than leaving the mixed history.
+
 Before running `git commit` in Cursor IDE, ensure **Cursor Settings → Agent → Attribution → Commit Attribution** is disabled. If the environment is known to inject attribution and this cannot be confirmed, stop before committing and ask the user to disable it. Do not create a commit and then amend or rewrite it solely to remove attribution.
 
 ### Examples
@@ -63,9 +80,9 @@ Only commit when the user asks. Never update git config, never `--force` push, n
    - `git branch --show-current` (or `git status -sb`) — if the branch name matches `[A-Z][A-Z0-9]+-\d+`, that ticket **must** be the message scope
    - `git diff` and `git diff --cached`
    - `git log -5 --oneline` (match message style)
-2. Draft a message that matches the format above. Prefer why/impact in the subject when it still fits one line; keep it short. No agent attribution in the message or trailers.
-3. Stage relevant files only (no secrets: `.env`, credentials, tokens).
-4. Commit with a HEREDOC:
+2. Partition changes into atomic commits (see [Atomic commits](#atomic-commits-required)). List each planned commit and its paths before staging. If more than one independent origin is dirty, plan multiple commits — do not stage everything into one.
+3. Draft a message per commit that matches the format above. Prefer why/impact in the subject when it still fits one line; keep it short. No agent attribution in the message or trailers.
+4. For each atomic unit: stage **only** that unit’s paths/hunks (no secrets: `.env`, credentials, tokens), then commit with a HEREDOC:
 
 ```bash
 git commit -m "$(cat <<'EOF'
@@ -75,7 +92,8 @@ EOF
 )"
 ```
 
-5. Run `git status` after and confirm success. Verify the full message has no agent attribution in subject, body, or trailers (`git log -1 --format=%B`).
+5. Repeat step 4 for each remaining atomic unit.
+6. Run `git status` after the last commit and confirm success. Verify each new commit’s full message has no agent attribution in subject, body, or trailers (`git log -N --format=%B` for the N commits you just created).
 
 If a pre-commit hook fails, fix the issue and create a **new** commit — do not amend unless the user asked to amend and the amend safety rules below are met.
 
