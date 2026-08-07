@@ -127,7 +127,7 @@ When the user re-invokes this skill to apply feedback on existing drafts:
    - Read them as instructions/decisions for **that** comment.
    - Rewrite the draft body to match (firm ask vs open question, scope, links, tone).
    - **Remove** the instructional bullets / “update this comment” meta from the published-facing text.
-   - End the rewritten body with `🤖+🧑‍💻` alone on its final line (see [Robot signature](#robot-signature-required)).
+   - End the rewritten body with the correct signature alone on its final line — `🧑‍💻` if the body is fully the human's substance, otherwise `🤖+🧑‍💻` (see [Comment signature](#comment-signature-required)).
    - `PUT` the updated note **with full `position`** (GitLab) so the inline anchor is preserved.
 4. Leave drafts without new user marks unchanged.
 5. Do not start a full re-review of the diff unless the user also asked for one (new commits / re-review).
@@ -248,15 +248,15 @@ Vary the closer across a review — do not reuse the same phrase (e.g. `Does it 
 
 **Do not use:** `LMK`, long closing sentences for decisions (`Curious what you'd prefer.`, `Thoughts?`, etc.), or closers on clear consistency fixes / soft docs asks where the decision already lives on a related thread.
 
-### Robot signature (required)
+### Comment signature (required)
 
 Every draft this skill writes — inline and overview, first pass and apply-feedback rewrite — ends with a signature alone on its **own final line**, after a blank line (same spacing as a closer).
 
 | When | Signature |
 | --- | --- |
 | Agent-only draft (no human edit of this comment yet) | `🤖` |
-| Human-adjusted — apply-feedback rewrite from bullets/notes under the draft, or any rewrite that incorporates reviewer decisions on that comment | `🤖+🧑‍💻` |
-| Result of discussion — draft or published note that reflects an author/reviewer exchange (re-review follow-up, reply that closes or continues a thread with agreed wording) | `🤖+🧑‍💻` |
+| Shared authorship — agent finding refined with human bullets/decisions, or a discussion follow-up that still mixes agent analysis with human steering | `🤖+🧑‍💻` |
+| Human content — the body is **100%** the person's statement, decision, or wording (agent only posted / lightly formatted it for MR voice). Includes: "write this answer…", paste-my-words replies, and apply-feedback rewrites that replace the draft with the human's substance rather than merging it into an agent finding | `🧑‍💻` |
 
 ```text
 🤖
@@ -266,11 +266,15 @@ Every draft this skill writes — inline and overview, first pass and apply-feed
 🤖+🧑‍💻
 ```
 
+```text
+🧑‍💻
+```
+
 - Do **not** put the signature mid-paragraph, on the same line as a closer, or omit it.
 - Use the Unicode emoji (`🤖`, `🧑‍💻`) — not `:robot:` / `:technologist:` shortcodes.
-- Apply-feedback `PUT`s: strip instructional bullets, then end with `🤖+🧑‍💻` (never leave a bare `🤖` after a human-steered rewrite).
-- Re-review drafts that only restate an unresolved agent finding stay `🤖`; if the new wording encodes a decision from the thread or from human draft marks, use `🤖+🧑‍💻`.
-- When editing a **published** note the same rules apply: human-adjusted or discussion-derived bodies get `🤖+🧑‍💻`.
+- Apply-feedback `PUT`s: strip instructional bullets, then pick `🤖+🧑‍💻` or `🧑‍💻` from the table (never leave a bare `🤖` after a human-steered rewrite). Prefer `🧑‍💻` when the rewritten body is essentially the human's decision in full; prefer `🤖+🧑‍💻` when the agent finding remains and the human only steered tone/scope/firmness.
+- Re-review drafts that only restate an unresolved agent finding stay `🤖`; mixed or human-owned wording uses the rows above.
+- When editing a **published** note the same rules apply.
 
 ### Emoji in the body (optional, off by default)
 
@@ -280,7 +284,7 @@ Only add emoji in comment **bodies** (aside from the required signature) if the 
 - At most one body emoji per comment, placed just before the signature line (after the closer, or after the last sentence if there's no closer) — never mid-paragraph, never after the signature.
 - Vary the body emoji across comments; do not reuse the same one every time (e.g. don't default to `:thinking:` everywhere).
 - Match the emoji to the comment's nature: `:thinking:` for genuine uncertainty/doubt, `:bulb:` for a suggestion, `:slightly_smiling_face:` for a light nit or casual aside.
-- Use GitLab/GitHub emoji shortcodes for body emoji (`:thinking:`, not a raw Unicode character). The required signature stays `🤖` or `🤖+🧑‍💻`.
+- Use GitLab/GitHub emoji shortcodes for body emoji (`:thinking:`, not a raw Unicode character). The required signature stays `🤖`, `🤖+🧑‍💻`, or `🧑‍💻`.
 
 The ✅ awards below (MR-level ready signal, and thread awards on re-review) are separate from body emoji and from the signature — apply each only when its section says to.
 
@@ -406,7 +410,7 @@ Wdyt?
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
-- [ ] Every draft (inline and overview) ends with `🤖` or `🤖+🧑‍💻` alone on its final line after a blank line — use `🤖+🧑‍💻` after human apply-feedback or discussion-derived wording; apply-feedback rewrites always use `🤖+🧑‍💻`
+- [ ] Every draft (inline and overview) ends with `🤖`, `🤖+🧑‍💻`, or `🧑‍💻` alone on its final line after a blank line — `🧑‍💻` when the body is 100% human substance; `🤖+🧑‍💻` for shared authorship; apply-feedback never leaves bare `🤖`
 - [ ] Body emoji only if requested; not on every comment; varied, not repeated; skipped on serious findings; never after the signature; `PUT` updates include `position` alongside `note`
 - [ ] After posting: short draft summary **plus** two lines on steering drafts (edit/delete in UI, bullets under a draft)
 - [ ] Pass ends with an interactive `AskQuestion` (single choice, ≤4 applicable options, recommended first) — not a prose list of next steps; answer acted on in the same chat
