@@ -35,38 +35,40 @@ Resolve the real server id with `GetMcpTools` (pattern search or catalog) before
 
 ## Status values
 
-| Status | Meaning |
-|--------|---------|
-| `ok` | Probe succeeded; include a short identity hint (login, display name, or account id) |
-| `fail` | Server present but probe errored (auth, permission, or API) |
-| `needsAuth` | Server requires authentication and is not usable yet |
-| `missing` | MCP server not available in this session |
-| `error` | Server listed but in error/unavailable state |
+Always render Status as `emoji label` using this fixed map (never omit the emoji):
+
+| Status | Render as | Meaning |
+|--------|-----------|---------|
+| `ok` | `✅ ok` | Probe succeeded; include a short identity hint (login, display name, or account id) |
+| `fail` | `❌ fail` | Server present but probe errored (auth, permission, or API) |
+| `needsAuth` | `🔐 needsAuth` | Server requires authentication and is not usable yet |
+| `missing` | `⚪ missing` | MCP server not available in this session |
+| `error` | `💥 error` | Server listed but in error/unavailable state |
 
 ## Report format
 
-Use this exact structure (Markdown):
+Use this exact structure (Markdown). Status column must include the emoji from the map above:
 
 ```markdown
 # Connection report
 
 | Service | Status | Detail |
 |---------|--------|--------|
-| GitHub | ok / fail / needsAuth / missing / error | <short detail> |
-| GitLab | … | … |
-| Jira | … | … |
-| Notion | … | … |
+| GitHub | ✅ ok | <short detail> |
+| GitLab | ❌ fail | <short detail> |
+| Jira | 🔐 needsAuth | <short detail> |
+| Notion | ⚪ missing | <short detail> |
 
 **Summary:** <N>/4 ok
 ```
 
 Detail examples:
 
-- `ok` — `login=octocat` or `user=Jane Doe`
-- `fail` — one-line error reason (no stack traces)
-- `needsAuth` — `authenticate MCP server`
-- `missing` — `MCP server not configured`
-- `error` — `serverStatus=error`
+- `✅ ok` — `login=octocat` or `user=Jane Doe`
+- `❌ fail` — one-line error reason (no stack traces)
+- `🔐 needsAuth` — `authenticate MCP server`
+- `⚪ missing` — `MCP server not configured`
+- `💥 error` — `serverStatus=error`
 
 Optional one-liner after the table only if something is blocked: what the user should fix (enable MCP, re-auth, check token). No essays.
 
