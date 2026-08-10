@@ -67,10 +67,18 @@ Detail examples:
 - `✅ ok` — `login=octocat` or `user=Jane Doe`
 - `❌ fail` — one-line error reason (no stack traces)
 - `🔐 needsAuth` — `authenticate MCP server`
-- `⚪ missing` — `MCP server not configured`
+- `⚪ missing` — `MCP server not configured — run mad-install-mcp-servers`
 - `💥 error` — `serverStatus=error`
 
 Optional one-liner after the table only if something is blocked: what the user should fix (enable MCP, re-auth, check token). No essays.
+
+## When missing or misconfigured
+
+If any service is `⚪ missing`, or `❌ fail` / `💥 error` looks like absent MCP config or bad server setup (not merely expired auth):
+
+- Point the user to **mad-install-mcp-servers** to write the preferred entries into `~/.cursor/mcp.json`, check env vars / CLIs, and re-run this report.
+- For `🔐 needsAuth` alone, prefer `mcp_auth` — do not treat that as an install problem.
+- For token/URL env issues after the server is present, name the expected `CURSOR_*` vars (see mad-install-mcp-servers) rather than inventing new ones.
 
 ## Do not
 
