@@ -28,6 +28,8 @@ Mad Skills target **Cursor** and **Claude Desktop** (including Claude cloud Skil
 
 - Conventional commits on `main` drive [semantic-release](https://github.com/semantic-release/semantic-release) versions and GitHub Releases.
 - Do **not** hand-create version tags for normal releases.
+- The version lives in git: CI commits the bumped `package.json` and `package-lock.json` as `chore(release): <version> [skip ci]`. Never bump those versions by hand.
+- The release commit must stay non-releasing (`chore`) and carry `[skip ci]`, so it cannot start another release run.
 - Skill zip packaging lives in `scripts/package-skill-zips.sh` (invoked by semantic-release `prepareCmd`).
 - Side branches and PRs run `semantic-release --dry-run` in CI to validate config and report the would-be next version without publishing.
 - Real publish (tag + release assets) happens only from `main`.

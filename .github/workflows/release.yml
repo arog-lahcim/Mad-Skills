@@ -4,6 +4,10 @@
 # - PRs targeting main → dry-run (no tag, no release, no assets)
 #
 # Dry-run still uses full history + tags so the would-be version matches what main would cut.
+#
+# The publish job pushes a `chore(release): <version> [skip ci]` commit with the bumped
+# package.json. That push cannot re-trigger this workflow: pushes authenticated with
+# GITHUB_TOKEN never start new runs, and `[skip ci]` makes GitHub skip the run anyway.
 
 name: Release
 
@@ -97,6 +101,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # semantic-release pushes the release commit and tag using an
+          # authenticated URL built from GITHUB_TOKEN, not the checkout credentials.
           persist-credentials: false
 
       - name: Setup Node.js

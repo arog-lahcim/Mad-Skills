@@ -63,3 +63,7 @@ Pushes to `main` run [semantic-release](https://github.com/semantic-release/sema
 and publish a GitHub Release with skill zips when conventional commits warrant a
 version bump. Side branches and PRs run `semantic-release --dry-run` (no tag or
 assets) to validate config and show the would-be next version.
+
+The released version is kept in git: CI pushes a `chore(release): <version> [skip ci]`
+commit with the bumped `package.json` (and lockfile) alongside the `v<version>` tag,
+so the tag, the release, and `package.json` never drift apart.
