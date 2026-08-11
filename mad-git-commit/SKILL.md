@@ -53,7 +53,7 @@ Do **not** invent a single umbrella subject that hides unrelated work (e.g. one 
 
 When rewriting a mixed commit the user asked to fix (unpushed / amend-safe), reset and re-commit **atomically** rather than leaving the mixed history.
 
-Before running `git commit` in Cursor IDE, ensure **Cursor Settings → Agent → Attribution → Commit Attribution** is disabled. If the environment is known to inject attribution and this cannot be confirmed, stop before committing and ask the user to disable it. Do not create a commit and then amend or rewrite it solely to remove attribution.
+When committing from **Cursor IDE**, ensure **Cursor Settings → Agent → Attribution → Commit Attribution** is disabled. If the environment is known to inject attribution and this cannot be confirmed, stop before committing and ask the user to disable it. Do not create a commit and then amend or rewrite it solely to remove attribution. Skip this Cursor-only check on other hosts.
 
 ### Examples
 

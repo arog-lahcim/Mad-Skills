@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Ensure empty export stubs for Mad Skills MCP env vars in a shell env file.
 # Run by the agent (mad-install-mcp-servers). Does not write secret values.
+#
+# Hosts stay independent:
+#   --host cursor  → CURSOR_* vars (Cursor ~/.cursor/mcp.json)
+#   --host claude  → CLAUDE_* vars (Claude Desktop claude_desktop_config.json)
 set -euo pipefail
 
-REQUIRED_VARS=(
+CURSOR_VARS=(
   CURSOR_GITHUB_TOKEN
   CURSOR_GITLAB_TOKEN
   CURSOR_JIRA_URL
@@ -14,15 +18,33 @@ REQUIRED_VARS=(
   CURSOR_CONFLUENCE_API_TOKEN
 )
 
-MARKER_BEGIN="# >>> mad-install-mcp-servers >>>"
-MARKER_END="# <<< mad-install-mcp-servers <<<"
+CLAUDE_VARS=(
+  CLAUDE_GITHUB_TOKEN
+  CLAUDE_GITLAB_TOKEN
+  CLAUDE_JIRA_URL
+  CLAUDE_JIRA_USERNAME
+  CLAUDE_JIRA_API_TOKEN
+  CLAUDE_CONFLUENCE_URL
+  CLAUDE_CONFLUENCE_USERNAME
+  CLAUDE_CONFLUENCE_API_TOKEN
+)
+
+HOST=""
+REQUIRED_VARS=()
+MARKER_BEGIN=""
+MARKER_END=""
+RESTART_APP=""
 
 usage() {
   cat <<'EOF'
 Usage:
-  ensure-env-exports.sh status
-  ensure-env-exports.sh suggest
-  ensure-env-exports.sh append --file PATH [--dry-run]
+  ensure-env-exports.sh --host cursor|claude status
+  ensure-env-exports.sh --host cursor|claude suggest
+  ensure-env-exports.sh --host cursor|claude append --file PATH [--dry-run]
+
+--host   Required. Selects which independent env var set to manage:
+         cursor → CURSOR_* (Cursor MCP)
+         claude → CLAUDE_* (Claude Desktop MCP)
 
 status   Print set|MISSING for each required var (values never printed).
 suggest  Print recommended env file and candidates for this shell/OS.
@@ -31,6 +53,31 @@ append   Append empty `export NAME=` stubs for vars that are MISSING in the
 
 Never pass secret values to this script; fill them by hand after append.
 EOF
+}
+
+set_host() {
+  local h="$1"
+  case "$h" in
+    cursor)
+      HOST="cursor"
+      REQUIRED_VARS=("${CURSOR_VARS[@]}")
+      MARKER_BEGIN="# >>> mad-install-mcp-servers:cursor >>>"
+      MARKER_END="# <<< mad-install-mcp-servers:cursor <<<"
+      RESTART_APP="Cursor"
+      ;;
+    claude)
+      HOST="claude"
+      REQUIRED_VARS=("${CLAUDE_VARS[@]}")
+      MARKER_BEGIN="# >>> mad-install-mcp-servers:claude >>>"
+      MARKER_END="# <<< mad-install-mcp-servers:claude <<<"
+      RESTART_APP="Claude Desktop"
+      ;;
+    *)
+      printf 'error: --host must be cursor or claude (got: %s)\n' "$h" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
 }
 
 expand_path() {
@@ -68,7 +115,6 @@ candidate_files() {
 
 recommended_file() {
   local f
-  # Prefer an existing candidate; otherwise the first candidate (create later).
   while IFS= read -r f; do
     if [[ -f "$f" ]]; then
       printf '%s\n' "$f"
@@ -86,13 +132,13 @@ var_is_set() {
 file_declares_var() {
   local file="$1" name="$2"
   [[ -f "$file" ]] || return 1
-  # Match export NAME= or NAME= (optional export, optional whitespace).
   grep -Eq "^[[:space:]]*(export[[:space:]]+)?${name}=" "$file"
 }
 
 cmd_status() {
   local v
   local missing=0
+  printf 'host=%s\n' "$HOST"
   for v in "${REQUIRED_VARS[@]}"; do
     if var_is_set "$v"; then
       printf '%s=set\n' "$v"
@@ -108,6 +154,7 @@ cmd_status() {
 cmd_suggest() {
   local rec f
   rec="$(recommended_file)"
+  printf 'host=%s\n' "$HOST"
   printf 'shell=%s\n' "$(shell_name)"
   printf 'recommended=%s\n' "$rec"
   printf 'candidates:\n'
@@ -118,7 +165,7 @@ cmd_suggest() {
       printf '  %s (missing)\n' "$f"
     fi
   done < <(candidate_files)
-  printf 'note=On macOS, prefer ~/.zshenv so login and non-interactive zsh see the vars; fully quit and reopen Cursor after editing.\n'
+  printf 'note=On macOS, prefer ~/.zshenv so login and non-interactive shells see the vars; fully quit and reopen %s after editing. GUI apps may not inherit terminal-only env.\n' "$RESTART_APP"
 }
 
 vars_to_append() {
@@ -169,6 +216,7 @@ cmd_append() {
   done < <(vars_to_append "$file")
 
   if [[ ${#pending[@]} -eq 0 ]]; then
+    printf 'host=%s\n' "$HOST"
     printf 'file=%s\n' "$file"
     printf 'action=noop\n'
     printf 'detail=no missing undeclared vars\n'
@@ -179,7 +227,7 @@ cmd_append() {
   block="$(
     {
       printf '%s\n' "$MARKER_BEGIN"
-      printf '# Fill values below; do not commit secrets. Restart Cursor after saving.\n'
+      printf '# Fill values below; do not commit secrets. Restart %s after saving.\n' "$RESTART_APP"
       for v in "${pending[@]}"; do
         printf 'export %s=\n' "$v"
       done
@@ -188,6 +236,7 @@ cmd_append() {
   )"
 
   if [[ "$dry_run" -eq 1 ]]; then
+    printf 'host=%s\n' "$HOST"
     printf 'file=%s\n' "$file"
     printf 'action=dry-run\n'
     printf 'would_append:\n%s\n' "$block"
@@ -196,7 +245,6 @@ cmd_append() {
 
   mkdir -p "$(dirname "$file")"
   if [[ -f "$file" ]] && [[ -s "$file" ]]; then
-    # Ensure a blank line before the block when the file has content.
     if [[ "$(tail -c1 "$file" | wc -l | tr -d ' ')" -eq 0 ]]; then
       printf '\n' >>"$file"
     fi
@@ -205,20 +253,47 @@ cmd_append() {
     printf '%s\n' "$block" >"$file"
   fi
 
+  printf 'host=%s\n' "$HOST"
   printf 'file=%s\n' "$file"
   printf 'action=appended\n'
   printf 'appended_vars=%s\n' "${pending[*]}"
-  printf 'detail=fill empty export values, then fully quit and reopen Cursor\n'
+  printf 'detail=fill empty export values, then fully quit and reopen %s\n' "$RESTART_APP"
 }
 
-main() {
+parse_global_args() {
+  local -a rest=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --host)
+        set_host "${2-}"
+        shift 2
+        ;;
+      -h|--help|help)
+        usage
+        exit 0
+        ;;
+      *)
+        rest+=("$1")
+        shift
+        ;;
+    esac
+  done
+  if [[ -z "$HOST" ]]; then
+    printf 'error: --host cursor|claude is required\n' >&2
+    usage >&2
+    exit 2
+  fi
+  set -- "${rest[@]}"
   local cmd="${1-}"
   shift || true
   case "$cmd" in
     status) cmd_status ;;
     suggest) cmd_suggest ;;
     append) cmd_append "$@" ;;
-    -h|--help|help|"") usage; [[ -n "$cmd" ]] || exit 2 ;;
+    "")
+      usage
+      exit 2
+      ;;
     *)
       printf 'Unknown command: %s\n' "$cmd" >&2
       usage >&2
@@ -227,4 +302,4 @@ main() {
   esac
 }
 
-main "$@"
+parse_global_args "$@"

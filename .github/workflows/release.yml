@@ -1,0 +1,120 @@
+# Semantic-release for Mad Skills.
+#
+# - push to main / workflow_dispatch on main → publish tag + GitHub Release + skill zips
+# - PRs targeting main → dry-run (no tag, no release, no assets)
+#
+# Dry-run still uses full history + tags so the would-be version matches what main would cut.
+#
+# The publish job pushes a `chore(release): <version> [skip ci]` commit with the bumped
+# package.json. That push cannot re-trigger this workflow: pushes authenticated with
+# GITHUB_TOKEN never start new runs, and `[skip ci]` makes GitHub skip the run anyway.
+
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    name: Semantic release (dry-run)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      # semantic-release verifies push permission even in dry-run mode by
+      # issuing `git push --dry-run`; it never creates a tag or release here.
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install release tooling
+        run: npm ci
+
+      - name: Dry-run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Running semantic-release --dry-run (no publish)."
+          # semantic-release exits early for pull_request events. Hide the CI
+          # marker and put the tested merge commit on a local main branch so
+          # the result exactly previews what main would release after merge.
+          unset GITHUB_ACTIONS
+          git checkout -B main HEAD
+          rm -f .next_version
+          if ! npx semantic-release --dry-run --no-ci --branches main 2>&1 | tee /tmp/semrel-dry-run.raw.log; then
+            echo "::error::semantic-release dry-run failed"
+            exit 1
+          fi
+
+          # verifyReleaseCmd writes this only when semantic-release found a release.
+          if [[ -s .next_version ]]; then
+            version="$(tr -d '[:space:]' < .next_version)"
+            echo "::notice::Would-be next version on main: ${version}"
+            echo "would_be_version=${version}"
+            {
+              echo "## Semantic release preview"
+              echo
+              echo "**Would-be next version on main: \`${version}\`**"
+              echo
+              echo "This was a dry run. No tag, release, or assets were published."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::notice::No release would be produced from these commits on main"
+            echo "would_be_version=none"
+            {
+              echo "## Semantic release preview"
+              echo
+              echo "**No release would be produced from these commits on main.**"
+              echo
+              echo "This was a dry run. No tag, release, or assets were published."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  publish:
+    name: Semantic release (publish)
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # semantic-release pushes the release commit and tag using an
+          # authenticated URL built from GITHUB_TOKEN, not the checkout credentials.
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install release tooling
+        run: npm ci
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release

@@ -44,7 +44,7 @@ Default comment language: **English** (unless the user requests otherwise).
 
 This skill is standing authorization to call `rename_chat` — do it without asking the user first.
 
-As soon as the MR is identified (and after the first user prompt of the chat has been sent — Cursor auto-naming overwrites titles set earlier), rename the chat to:
+As soon as the MR is identified (and after the first user prompt of the chat has been sent — when the host auto-names chats, that may overwrite titles set earlier), rename the chat to:
 
 ```
 MR !<iid> (<JIRA-KEY>) - <MR author name> - <context>
