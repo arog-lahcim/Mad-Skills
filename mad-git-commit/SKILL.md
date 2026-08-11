@@ -94,6 +94,7 @@ EOF
 
 5. Repeat step 4 for each remaining atomic unit.
 6. Run `git status` after the last commit and confirm success. Verify each new commit’s full message has no agent attribution in subject, body, or trailers (`git log -N --format=%B` for the N commits you just created).
+7. **Always print a summary of the created commits.** For each commit report its short hash and subject (e.g. from `git log -N --oneline` for the N commits you just created), and when splitting into multiple commits briefly note why the changes were partitioned that way.
 
 If a pre-commit hook fails, fix the issue and create a **new** commit — do not amend unless the user asked to amend and the amend safety rules below are met.
 
