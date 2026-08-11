@@ -1,0 +1,42 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "releaseRules": [
+          { "type": "build", "release": "patch" },
+          { "type": "ci", "release": "patch" },
+          { "type": "docs", "release": false },
+          { "type": "refactor", "release": "patch" },
+          { "type": "style", "release": "patch" },
+          { "type": "test", "release": "patch" },
+          { "scope": "no-release", "release": false }
+        ]
+      }
+    ],
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "bash scripts/package-skill-zips.sh"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist/*.zip"
+          }
+        ]
+      }
+    ]
+  ]
+}
