@@ -7,11 +7,13 @@ mutating step, and do not invent alternate remotes or install layouts.
 ## Canonical remote
 
 ```text
-https://github.com/arog-lahcim/Mad-Skills
+git@github.com:arog-lahcim/Mad-Skills.git
 ```
 
-Prefer HTTPS clone. Use SSH (`git@github.com:arog-lahcim/Mad-Skills.git`) only if
-the user’s environment already has GitHub SSH working.
+Browser / HTTPS URL (docs, Releases): https://github.com/arog-lahcim/Mad-Skills
+
+Prefer **SSH** clone. Use HTTPS (`https://github.com/arog-lahcim/Mad-Skills.git`)
+only when the user asks for it, or when SSH to GitHub is unavailable.
 
 ## Workflow
 
@@ -50,10 +52,11 @@ Wait for their answer before mutating anything.
 **Clone** (if needed):
 
 ```bash
-git clone https://github.com/arog-lahcim/Mad-Skills.git ~/Mad-Skills
+git clone git@github.com:arog-lahcim/Mad-Skills.git ~/Mad-Skills
 ```
 
-(Adjust destination to the user’s chosen path.)
+(Adjust destination to the user’s chosen path. Switch to the HTTPS URL only if
+the user prefers it or SSH fails.)
 
 **Symlink**
 
@@ -113,7 +116,7 @@ that path was skipped):
 |------|--------|
 | Host | Cursor / Claude Desktop / Both |
 | Scope | Skills only / Skills + MCP / MCP only |
-| Remote | https://github.com/arog-lahcim/Mad-Skills |
+| Remote | git@github.com:arog-lahcim/Mad-Skills.git (or HTTPS if the user chose that) |
 | Clone | <path or n/a> |
 | Cursor symlink | ~/.cursor/skills/Mad-Skills → <target or n/a / unchanged> |
 | Claude skills | uploaded from release zips / local zips / n/a |
