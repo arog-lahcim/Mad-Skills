@@ -11,6 +11,8 @@ description: >-
 
 Verify the agent can reach the four required MCP services and report the result.
 
+If the active host is ambiguous, ask once: **Cursor** or **Claude Desktop**.
+
 ## Services under test
 
 | Service | MCP server id (typical) | Probe |
@@ -20,9 +22,29 @@ Verify the agent can reach the four required MCP services and report the result.
 | Jira | `user-mcp-atlassian` / `mcp-atlassian` | `jira_get_all_projects` (`include_archived: false`) |
 | Notion | `user-notion` / `notion` | `notion-get-users` (`user_id: "self"`) |
 
-Resolve the real server id with `GetMcpTools` (pattern search or catalog) before calling tools. Prefer the smallest whoami-style probe above; do not create, edit, or delete anything.
+### Cursor (agent MCP introspection available)
 
-## Workflow
+Resolve the real server id with `GetMcpTools` (pattern search or catalog) before
+calling tools. Prefer the smallest whoami-style probe above; do not create, edit,
+or delete anything.
+
+### Claude Desktop (no agent-side MCP probe API)
+
+Do **not** invent passing statuses. When running inside Claude Desktop (or when
+`GetMcpTools` / `mcp_auth` are unavailable):
+
+1. Confirm preferred servers were merged into `claude_desktop_config.json` (see
+   **mad-install-mcp-servers** / [mcp.claude.json](../mad-install-mcp-servers/mcp.claude.json)).
+2. Confirm the user fully quit and relaunched Claude Desktop after config/env changes.
+3. Report each service as:
+   - `⚪ missing` — server key absent from config
+   - `💥 error` — config present but user reports load failure / logs show startup errors
+   - `🔐 needsAuth` — connector/OAuth still required (Notion, etc.)
+   - Otherwise ask the user to trigger a tiny read-only action in chat that would
+     use that MCP; only then mark `✅ ok` or `❌ fail` from the observed result
+4. Prefer naming expected `CLAUDE_*` env vars when tokens look unset.
+
+## Workflow (Cursor)
 
 1. Discover which of the four servers are present and their `serverStatus`.
 2. For each service, in parallel when possible:
@@ -76,13 +98,15 @@ Optional one-liner after the table only if something is blocked: what the user s
 
 If any service is `⚪ missing`, or `❌ fail` / `💥 error` looks like absent MCP config or bad server setup (not merely expired auth):
 
-- Point the user to **mad-install-mcp-servers** to write the preferred entries into `~/.cursor/mcp.json`, check env vars / CLIs, and re-run this report.
-- For `🔐 needsAuth` alone, prefer `mcp_auth` — do not treat that as an install problem.
-- For token/URL env issues after the server is present, name the expected `CURSOR_*` vars (see mad-install-mcp-servers) rather than inventing new ones.
+- Point the user to **mad-install-mcp-servers** for the **same host**:
+  - Cursor → `~/.cursor/mcp.json` + `CURSOR_*` vars
+  - Claude Desktop → `claude_desktop_config.json` + `CLAUDE_*` vars
+- For `🔐 needsAuth` alone on Cursor, prefer `mcp_auth` — do not treat that as an install problem.
+- For token/URL env issues after the server is present, name the host-specific vars (`CURSOR_*` or `CLAUDE_*`) rather than inventing new ones or crossing hosts.
 
 ## Do not
 
 - Skip a listed service
 - Write data to any service as part of the check
-- Invent a passing status without a successful probe
+- Invent a passing status without a successful probe (Cursor) or observed evidence (Claude Desktop)
 - Expand the report with unrelated diagnostics unless the user asks
