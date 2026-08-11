@@ -25,6 +25,7 @@
     [
       "@semantic-release/exec",
       {
+        "verifyReleaseCmd": "printf '%s\\n' '${nextRelease.version}' > .next_version",
         "prepareCmd": "bash scripts/package-skill-zips.sh"
       }
     ],

@@ -1,7 +1,7 @@
 # Semantic-release for Mad Skills.
 #
 # - push to main / workflow_dispatch on main → publish tag + GitHub Release + skill zips
-# - push to other branches / PRs targeting main → dry-run (no tag, no release, no assets)
+# - PRs targeting main → dry-run (no tag, no release, no assets)
 #
 # Dry-run still uses full history + tags so the would-be version matches what main would cut.
 
@@ -9,6 +9,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -20,10 +22,12 @@ permissions:
 jobs:
   dry-run:
     name: Semantic release (dry-run)
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main')
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # semantic-release verifies push permission even in dry-run mode by
+      # issuing `git push --dry-run`; it never creates a tag or release here.
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,20 +49,39 @@ jobs:
         run: |
           set -euo pipefail
           echo "Running semantic-release --dry-run (no publish)."
-          # Capture output; fail the job if semantic-release itself fails.
-          if ! npx semantic-release --dry-run 2>&1 | tee /tmp/semrel-dry-run.log; then
+          # semantic-release exits early for pull_request events. Hide the CI
+          # marker and put the tested merge commit on a local main branch so
+          # the result exactly previews what main would release after merge.
+          unset GITHUB_ACTIONS
+          git checkout -B main HEAD
+          rm -f .next_version
+          if ! npx semantic-release --dry-run --no-ci --branches main 2>&1 | tee /tmp/semrel-dry-run.raw.log; then
             echo "::error::semantic-release dry-run failed"
             exit 1
           fi
-          if grep -Eq 'The next release version is [0-9]' /tmp/semrel-dry-run.log; then
-            version="$(grep -Eo 'The next release version is [0-9][^ ]*' /tmp/semrel-dry-run.log | tail -1 | awk '{print $NF}')"
+
+          # verifyReleaseCmd writes this only when semantic-release found a release.
+          if [[ -s .next_version ]]; then
+            version="$(tr -d '[:space:]' < .next_version)"
             echo "::notice::Would-be next version on main: ${version}"
             echo "would_be_version=${version}"
-          elif grep -Eqi 'no (new )?release|nothing to release|does not trigger a release' /tmp/semrel-dry-run.log; then
+            {
+              echo "## Semantic release preview"
+              echo
+              echo "**Would-be next version on main: \`${version}\`**"
+              echo
+              echo "This was a dry run. No tag, release, or assets were published."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
             echo "::notice::No release would be produced from these commits on main"
             echo "would_be_version=none"
-          else
-            echo "::notice::Dry-run completed; check logs above for the would-be version"
+            {
+              echo "## Semantic release preview"
+              echo
+              echo "**No release would be produced from these commits on main.**"
+              echo
+              echo "This was a dry run. No tag, release, or assets were published."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
   publish:
