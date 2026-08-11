@@ -2,8 +2,9 @@
 name: mad-draft-code-review
 description: >-
   Leave unpublished draft code-review comments on GitLab MRs (or GitHub PRs)
-  with team-friendly voice, Nit labeling, cross-linked threads, and natural
-  closers (Wdyt?, Does it make sense?). Grounds the review in the linked
+  with team-friendly voice, Nit labeling, cross-linked threads, natural
+  closers (Wdyt?, Does it make sense?), and a one-line TLDR above a horizontal
+  rule on long comments. Grounds the review in the linked
   ticket's acceptance criteria and the specs it references. After posting,
   summarize drafts, explain how to steer them (bullets under drafts), and end
   every pass by asking the user what to do next as an interactive
@@ -196,9 +197,34 @@ Resolve the fragment from the fetched doc (in-page TOC links, "Copy link to bloc
 - That the source branch is behind the target, or asking the author to rebase / merge target into the branch — GitLab/GitHub already surface divergence; it is not a review finding for this MR unless a concrete correctness issue in the diff depends on it (comment on that issue inline, not as a rebase ask).
 - Priority labels (`Low`, `Medium`, `High`, “nitpick priority”, etc.) except the `Nit:` prefix below.
 
+## TLDR for long comments
+
+A long comment buries its own ask. When a draft runs past roughly **100 words** or **four paragraphs**, open it with a one-line summary, then a horizontal rule, then the full reasoning. Applies to inline notes and the overview alike.
+
+```text
+**TLDR:** <one sentence: the finding and the ask>
+
+---
+
+<full comment body>
+
+<closer, when natural>
+
+<signature>
+```
+
+- Blank line on **both** sides of the `---`. Without the blank line above it, Markdown reads the rule as a setext heading and turns the TLDR line into a heading instead.
+- One sentence, naming both what is wrong and what to do. A topic label (`**TLDR:** hotPath defaults`) is not a TLDR.
+- No heading, no bullets, no second sentence inside the TLDR.
+- The TLDR carries neither the closer nor the signature; both stay at the end of the comment.
+- Under the threshold, skip it — a summary as long as the comment it summarizes only adds reading.
+- `Nit:` drafts open with `Nit: ` and take no TLDR. A nit long enough to want one wants trimming instead.
+- Long enough for a TLDR is also worth a second look for text to cut. Add the summary, then drop whatever the summary made redundant.
+- On an [apply-feedback](#apply-draft-feedback) rewrite, move the TLDR with the body: a TLDR promising an ask the body no longer makes is worse than none, and a rewrite that lands under the threshold loses it.
+
 ## Overview (general) note
 
-- No title or heading — it is already a review of this MR/PR.
+- No title or heading — it is already a review of this MR/PR. A `**TLDR:**` line is a summary, not a title, and stays allowed when the note is long enough to need one.
 - No praise or criticism of the work.
 - Do **not** restate topics covered by inline comments.
 - Keep only items that have no inline home.
@@ -411,6 +437,24 @@ Wdyt?
 🤖
 ```
 
+Long finding, summarized first (see [TLDR for long comments](#tldr-for-long-comments)):
+
+```text
+**TLDR:** every call that omits `hotPath` resets `enabled` to `false` on an existing CR — could we write the field only when the request carries it?
+
+---
+
+`build_manifest` always writes `spec.hotPath`, and `apply_cr` sends the manifest as a merge patch, so each call rewrites `hotPath` on an existing CR.
+
+`dataOffload` is never written here and `topicName` only when the request carries it, so both survive a patch. `hotPath` is the one field where a call that means to bump `retentionDays` also flips hot-path state.
+
+Downstream that is not inert: with `enabled: false` the controller stops the Routine Load and rebuilds the serving view cold-only.
+
+Wdyt?
+
+🤖
+```
+
 ## Checklist before finishing
 
 - [ ] Chat renamed to `MR !<iid> (<JIRA-KEY>) - <author> - <context>` (or without `(<JIRA-KEY>)` when none); author is MR creator
@@ -425,6 +469,7 @@ Wdyt?
 - [ ] No praise/blame overview; no draft meta; no MR-description or missing-ticket nags; no source/base conflict or rebase/behind-target comments
 - [ ] Overview does not duplicate inline topics; no overview title; no rebase asks
 - [ ] Nits use `Nit: `; no other priority labels; bold used sparingly
+- [ ] Drafts over ~100 words / four paragraphs open with a one-sentence `**TLDR:**` then a blank-line-wrapped `---`; shorter drafts and `Nit:` drafts have none; apply-feedback keeps each TLDR in step with its body
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
