@@ -18,7 +18,7 @@ Prefer the global install:
 ~/.cursor/skills/Mad-Skills
 ```
 
-That path should be a symlink to the Mad-Skills clone. If it is missing, stop and tell the user to install first (see repo README). Do not create a new clone unless asked.
+That path should be a symlink to the Mad-Skills clone. If it is missing, stop and tell the user to install first via [INSTALL.md](https://raw.githubusercontent.com/arog-lahcim/Mad-Skills/main/INSTALL.md) (repo: https://github.com/arog-lahcim/Mad-Skills). Do not create a new clone or symlink unless the user asks you to follow that install guide.
 
 ## Steps
 
@@ -30,7 +30,7 @@ That path should be a symlink to the Mad-Skills clone. If it is missing, stop an
 git pull
 ```
 
-4. Confirm success with `git status -sb` and list installed skills (`skills/*/SKILL.md`).
+4. Confirm success with `git status -sb` and list installed skills (`*/SKILL.md` under the Mad-Skills root).
 5. Tell the user the result briefly: already up to date, or what changed. Mention reloading Cursor / **Customize → Skills** only if skills were added or removed.
 
 ## Do not
