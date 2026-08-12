@@ -94,7 +94,31 @@ EOF
 
 5. Repeat step 4 for each remaining atomic unit.
 6. Run `git status` after the last commit and confirm success. Verify each new commit’s full message has no agent attribution in subject, body, or trailers (`git log -N --format=%B` for the N commits you just created).
-7. **Always print a summary of the created commits.** For each commit report its short hash and subject (e.g. from `git log -N --oneline` for the N commits you just created), and when splitting into multiple commits briefly note why the changes were partitioned that way.
+7. **Always print a summary of the created commits** as an ordered list. For each commit, put the short hash and the full subject each in their own monospace (inline code) spans. Use `git log -N --oneline` for the N commits you just created (oldest first or newest first is fine, but keep the list consistent). When splitting into multiple commits, briefly note why after the list.
+
+Summary format (required):
+
+```markdown
+1. `abc1234` `type(SCOPE-1): subject here`
+2. `def5678` `type: another subject`
+```
+
+Examples:
+
+Single commit:
+
+```markdown
+1. `45d4438` `ci: log built E2E image details before push`
+```
+
+Multiple commits (with partition note):
+
+```markdown
+1. `a1b2c3d` `feat(ABC-123): add warmup Kafka producer`
+2. `e4f5a6b` `docs(ABC-123): document warmup CI job`
+
+Split because producer code and docs are independent review units.
+```
 
 If a pre-commit hook fails, fix the issue and create a **new** commit — do not amend unless the user asked to amend and the amend safety rules below are met.
 
