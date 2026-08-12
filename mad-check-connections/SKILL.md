@@ -11,7 +11,8 @@ description: >-
 
 Verify the agent can reach the four required MCP services and report the result.
 
-If the active host is ambiguous, ask once: **Cursor** or **Claude Desktop**.
+If the active host is ambiguous, ask once: **Cursor**, **Claude Desktop**, or
+**Hermes Agent**.
 
 ## Services under test
 
@@ -43,6 +44,24 @@ Do **not** invent passing statuses. When running inside Claude Desktop (or when
    - Otherwise ask the user to trigger a tiny read-only action in chat that would
      use that MCP; only then mark `:white_check_mark: ok` or `:x: fail` from the observed result
 4. Prefer naming expected `CLAUDE_*` env vars when tokens look unset.
+
+### Hermes Agent (no Cursor MCP probe API)
+
+Do **not** invent Cursor-style probes. When the host is Hermes:
+
+1. Confirm preferred servers were merged under `mcp_servers` in
+   `~/.hermes/config.yaml` (see **mad-install-mcp-servers** /
+   [mcp.hermes.json](../mad-install-mcp-servers/mcp.hermes.json)).
+2. Confirm `/reload-mcp` (or Hermes restart) after config/env changes.
+3. Confirm `HERMES_*` stubs are filled in `~/.hermes/.env` (or process env) when
+   tokens look unset.
+4. Report each service as:
+   - `:white_circle: missing` — server key absent from `mcp_servers`
+   - `:boom: error` — config present but Hermes reports load/connect failure
+   - `:closed_lock_with_key: needsAuth` — OAuth still required (e.g. Notion:
+     `hermes mcp login notion`)
+   - Otherwise ask the user to run a tiny read-only MCP action in Hermes; only
+     then mark `:white_check_mark: ok` or `:x: fail` from the observed result
 
 ## Workflow (Cursor)
 
@@ -101,12 +120,18 @@ If any service is `:white_circle: missing`, or `:x: fail` / `:boom: error` looks
 - Point the user to **mad-install-mcp-servers** for the **same host**:
   - Cursor → `~/.cursor/mcp.json` + `CURSOR_*` vars
   - Claude Desktop → `claude_desktop_config.json` + `CLAUDE_*` vars
+  - Hermes Agent → `~/.hermes/config.yaml` (`mcp_servers`) + `HERMES_*` vars
+    (prefer `~/.hermes/.env`)
 - For `:closed_lock_with_key: needsAuth` alone on Cursor, prefer `mcp_auth` — do not treat that as an install problem.
-- For token/URL env issues after the server is present, name the host-specific vars (`CURSOR_*` or `CLAUDE_*`) rather than inventing new ones or crossing hosts.
+- For Hermes OAuth (e.g. Notion), prefer `hermes mcp login <server>`.
+- For token/URL env issues after the server is present, name the host-specific
+  vars (`CURSOR_*`, `CLAUDE_*`, or `HERMES_*`) rather than inventing new ones or
+  crossing hosts.
 
 ## Do not
 
 - Skip a listed service
 - Write data to any service as part of the check
-- Invent a passing status without a successful probe (Cursor) or observed evidence (Claude Desktop)
+- Invent a passing status without a successful probe (Cursor) or observed
+  evidence (Claude Desktop / Hermes Agent)
 - Expand the report with unrelated diagnostics unless the user asks
