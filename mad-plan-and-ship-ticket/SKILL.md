@@ -3,8 +3,8 @@ name: mad-plan-and-ship-ticket
 description: >-
   Orchestrates ticket delivery from plan through unpublished draft MR review
   and stops for human merge. Use when the user asks to ship work end-to-end,
-  /mad-plan-and-ship-ticket, or plan → Jira → branch → implement → commit/MR →
-  draft review.
+  /mad-plan-and-ship-ticket, or plan -> Jira -> branch -> implement ->
+  commit/MR -> draft review.
 disable-model-invocation: true
 ---
 

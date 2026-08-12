@@ -37,11 +37,11 @@ Do **not** invent passing statuses. When running inside Claude Desktop (or when
    **mad-install-mcp-servers** / [mcp.claude.json](../mad-install-mcp-servers/mcp.claude.json)).
 2. Confirm the user fully quit and relaunched Claude Desktop after config/env changes.
 3. Report each service as:
-   - `⚪ missing` — server key absent from config
-   - `💥 error` — config present but user reports load failure / logs show startup errors
-   - `🔐 needsAuth` — connector/OAuth still required (Notion, etc.)
+   - `:white_circle: missing` — server key absent from config
+   - `:boom: error` — config present but user reports load failure / logs show startup errors
+   - `:closed_lock_with_key: needsAuth` — connector/OAuth still required (Notion, etc.)
    - Otherwise ask the user to trigger a tiny read-only action in chat that would
-     use that MCP; only then mark `✅ ok` or `❌ fail` from the observed result
+     use that MCP; only then mark `:white_check_mark: ok` or `:x: fail` from the observed result
 4. Prefer naming expected `CLAUDE_*` env vars when tokens look unset.
 
 ## Workflow (Cursor)
@@ -61,11 +61,11 @@ Always render Status as `emoji label` using this fixed map (never omit the emoji
 
 | Status | Render as | Meaning |
 |--------|-----------|---------|
-| `ok` | `✅ ok` | Probe succeeded; include a short identity hint (login, display name, or account id) |
-| `fail` | `❌ fail` | Server present but probe errored (auth, permission, or API) |
-| `needsAuth` | `🔐 needsAuth` | Server requires authentication and is not usable yet |
-| `missing` | `⚪ missing` | MCP server not available in this session |
-| `error` | `💥 error` | Server listed but in error/unavailable state |
+| `ok` | `:white_check_mark: ok` | Probe succeeded; include a short identity hint (login, display name, or account id) |
+| `fail` | `:x: fail` | Server present but probe errored (auth, permission, or API) |
+| `needsAuth` | `:closed_lock_with_key: needsAuth` | Server requires authentication and is not usable yet |
+| `missing` | `:white_circle: missing` | MCP server not available in this session |
+| `error` | `:boom: error` | Server listed but in error/unavailable state |
 
 ## Report format
 
@@ -76,32 +76,32 @@ Use this exact structure (Markdown). Status column must include the emoji from t
 
 | Service | Status | Detail |
 |---------|--------|--------|
-| GitHub | ✅ ok | <short detail> |
-| GitLab | ❌ fail | <short detail> |
-| Jira | 🔐 needsAuth | <short detail> |
-| Notion | ⚪ missing | <short detail> |
+| GitHub | :white_check_mark: ok | <short detail> |
+| GitLab | :x: fail | <short detail> |
+| Jira | :closed_lock_with_key: needsAuth | <short detail> |
+| Notion | :white_circle: missing | <short detail> |
 
 **Summary:** <N>/4 ok
 ```
 
 Detail examples:
 
-- `✅ ok` — `login=octocat` or `user=Jane Doe`
-- `❌ fail` — one-line error reason (no stack traces)
-- `🔐 needsAuth` — `authenticate MCP server`
-- `⚪ missing` — `MCP server not configured — run mad-install-mcp-servers`
-- `💥 error` — `serverStatus=error`
+- `:white_check_mark: ok` — `login=octocat` or `user=Jane Doe`
+- `:x: fail` — one-line error reason (no stack traces)
+- `:closed_lock_with_key: needsAuth` — `authenticate MCP server`
+- `:white_circle: missing` — `MCP server not configured — run mad-install-mcp-servers`
+- `:boom: error` — `serverStatus=error`
 
 Optional one-liner after the table only if something is blocked: what the user should fix (enable MCP, re-auth, check token). No essays.
 
 ## When missing or misconfigured
 
-If any service is `⚪ missing`, or `❌ fail` / `💥 error` looks like absent MCP config or bad server setup (not merely expired auth):
+If any service is `:white_circle: missing`, or `:x: fail` / `:boom: error` looks like absent MCP config or bad server setup (not merely expired auth):
 
 - Point the user to **mad-install-mcp-servers** for the **same host**:
   - Cursor → `~/.cursor/mcp.json` + `CURSOR_*` vars
   - Claude Desktop → `claude_desktop_config.json` + `CLAUDE_*` vars
-- For `🔐 needsAuth` alone on Cursor, prefer `mcp_auth` — do not treat that as an install problem.
+- For `:closed_lock_with_key: needsAuth` alone on Cursor, prefer `mcp_auth` — do not treat that as an install problem.
 - For token/URL env issues after the server is present, name the host-specific vars (`CURSOR_*` or `CLAUDE_*`) rather than inventing new ones or crossing hosts.
 
 ## Do not

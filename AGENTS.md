@@ -34,6 +34,60 @@ Mad Skills target **Cursor** and **Claude Desktop** (including Claude cloud Skil
 - Side branches and PRs run `semantic-release --dry-run` in CI to validate config and report the would-be next version without publishing.
 - Real publish (tag + release assets) happens only from `main`.
 
+## Character safety (Cursor + GitHub/GitLab)
+
+Incompatible characters in skills have crashed Cursor (protobuf decode error on
+`CursorRuleTypeAgentFetched.description`: “invalid UTF8”). Treat this as a hard
+constraint when **creating or editing** any skill in this repo.
+
+### Frontmatter `description` — ASCII only
+
+The YAML `description` field is loaded into Cursor’s skill/rule metadata path.
+
+- Use **ASCII only** in `name`, `description`, and other frontmatter values.
+- **Never** put raw emoji, ZWJ sequences (e.g. technologist `U+1F9D1 U+200D U+1F4BB`),
+  or other non-ASCII symbols in `description`.
+- Prefer plain words or GitHub/GitLab shortcode *names without colons* only if you
+  must mention a reaction (`white_check_mark`, `robot`) — still ASCII.
+- Keep descriptions concise; long emoji-heavy blurbs belong in the markdown body,
+  not in frontmatter.
+
+Before finishing a skill edit, confirm the frontmatter block has no codepoints
+above U+007F.
+
+### Skill body — emoji shortcodes, not raw Unicode
+
+In `SKILL.md` bodies (and sibling markdown in a skill folder):
+
+- Do **not** insert raw emoji characters (`✅`, `🤖`, `🧑‍💻`, …).
+- Use GitHub/GitLab-compatible shortcodes instead, e.g. `:white_check_mark:`,
+  `:robot:`, `:technologist:`, `:dart:`, `:compass:`, `:grey_question:`,
+  `:speech_balloon:`, `:x:`, `:boom:`, `:white_circle:`,
+  `:closed_lock_with_key:`.
+- Source of truth for names:
+  [ikatyang/emoji-cheat-sheet](https://github.com/ikatyang/emoji-cheat-sheet)
+  (generated from the [GitHub Emoji API](https://api.github.com/emojis)).
+- Only use a shortcode that appears on that sheet / in the GitHub API so GitLab
+  and GitHub both render and accept it.
+- Combined signatures stay as adjacent shortcodes plus ASCII, e.g.
+  `:robot:+:technologist:` (not a raw ZWJ glyph).
+- Reaction **API** names stay bare (`white_check_mark`, `robot`, `technologist`)
+  without surrounding colons — that is separate from markdown shortcodes.
+
+Typography that is not emoji (em dash, arrows, curly quotes) is discouraged in
+frontmatter; in bodies, prefer ASCII (`-`, `->`, `...`, straight quotes) when
+practical so agents and tools do not reintroduce risky bytes near descriptions.
+
+### Checklist for agents editing skills
+
+```
+Skill character safety:
+- [ ] Frontmatter description/name are ASCII-only
+- [ ] No raw emoji or ZWJ sequences anywhere in new/edited skill text
+- [ ] Any emoji intent uses :shortcode: from the GitHub emoji cheat sheet
+- [ ] Reaction API examples use bare names where the host API requires them
+```
+
 ## Commits for skill changes
 
 This repository is a collection of agent skills. Updates to a skill’s `SKILL.md`

@@ -1,0 +1,13 @@
+---
+description: Mad Skills repo conventions for agents
+alwaysApply: true
+---
+
+# Mad Skills
+
+Follow [AGENTS.md](../../AGENTS.md) in this repository.
+
+Critical when creating or editing skills:
+
+- YAML frontmatter `description` / `name`: **ASCII only** (no raw emoji or ZWJ). Non-ASCII in `description` has crashed Cursor.
+- Skill body: use GitHub/GitLab `:shortcode:` names from https://github.com/ikatyang/emoji-cheat-sheet — never raw emoji characters.

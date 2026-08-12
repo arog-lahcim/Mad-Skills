@@ -5,27 +5,25 @@ description: >-
   with team-friendly voice, Nit labeling, cross-linked threads, natural
   closers (Wdyt?, Does it make sense?), and a one-line TLDR above a horizontal
   rule on long comments. Signs every comment with author, register and an
-  evidence marker (🎯 verified / 🧭 inferred / ❔ unverified) so its weight
-  matches what the MR actually owns and what could be checked — findings only
-  for verified problems in code it authored, one-line non-blocking asks or
+  evidence marker (verified / inferred / unverified) so its weight matches
+  what the MR actually owns and what could be checked - findings only for
+  verified problems in code it authored, one-line non-blocking asks or
   heads-ups for code moved unchanged, sibling MRs, or effects that cannot be
   verified. Budgets that volume against the substantive size of the change
   rather than the raw diff, and reports what it downgraded or dropped.
-  Grounds the review in the linked
-  ticket's acceptance criteria and the specs it references. After posting,
-  summarize drafts, explain how to steer them (bullets under drafts), and end
-  every pass by asking the user what to do next as an interactive
-  multiple-choice question instead of listing options in prose. Never recreate
-  drafts the user deleted
-  unless they explicitly ask. On re-review, resolve fixed threads (award ✅
-  only when the author replied); do not leave acknowledgment replies. When a
-  review leaves no required-change drafts and the MR looks ready to merge,
-  award ✅ plus
-  authorship reactions on the MR itself: 🤖 for agent work, 🤖 and 🧑‍💻 for
-  shared work, or 🧑‍💻 for human work. If a re-review instead leaves new
-  required-change drafts, remove the prior ready-signal reactions and award 💬
-  (`speech_balloon`) instead. Renames the chat
-  to a fixed MR title format as soon as the MR is identified.
+  Grounds the review in the linked ticket's acceptance criteria and the specs
+  it references. After posting, summarize drafts, explain how to steer them
+  (bullets under drafts), and end every pass by asking the user what to do
+  next as an interactive multiple-choice question instead of listing options
+  in prose. Never recreate drafts the user deleted unless they explicitly
+  ask. On re-review, resolve fixed threads (award white_check_mark only when
+  the author replied); do not leave acknowledgment replies. When a review
+  leaves no required-change drafts and the MR looks ready to merge, award
+  white_check_mark plus authorship reactions on the MR itself: robot for
+  agent work, robot and technologist for shared work, or technologist for
+  human work. If a re-review instead leaves new required-change drafts,
+  remove the prior ready-signal reactions and award speech_balloon instead.
+  Renames the chat to a fixed MR title format as soon as the MR is identified.
   Use when the user asks to review a merge request or pull request, open a
   draft review, add review comments without publishing, refine pending draft
   notes, or apply edits / decisions left under existing drafts.
@@ -95,7 +93,7 @@ If the review target is GitHub, use `gh` pending-review APIs equivalently: creat
 
 End the user-facing reply with three parts, in this order:
 
-1. **Summary** — brief list of draft topics / files (or “merge-ready; ✅ plus authorship reaction(s) on MR” when applicable).
+1. **Summary** — brief list of draft topics / files (or “merge-ready; :white_check_mark: plus authorship reaction(s) on MR” when applicable).
 2. **How to steer the drafts** — two short lines, no more:
 
 - Edit or **delete** any draft in the MR UI; deleted drafts stay gone.
@@ -139,7 +137,7 @@ When the user re-invokes this skill to apply feedback on existing drafts:
    - Read them as instructions/decisions for **that** comment.
    - Rewrite the draft body to match (firm ask vs open question, scope, links, tone).
    - **Remove** the instructional bullets / “update this comment” meta from the published-facing text.
-   - End the rewritten body with the correct signature alone on its final line — `🧑‍💻` if the body is fully the human's substance, otherwise `🤖+🧑‍💻` (see [Comment signature](#comment-signature-required)).
+   - End the rewritten body with the correct signature alone on its final line — `:technologist:` if the body is fully the human's substance, otherwise `:robot:+:technologist:` (see [Comment signature](#comment-signature-required)).
    - `PUT` the updated note **with full `position`** (GitLab) so the inline anchor is preserved.
 4. Leave drafts without new user marks unchanged.
 5. Do not start a full re-review of the diff unless the user also asked for one (new commits / re-review).
@@ -220,9 +218,9 @@ Before drafting, place each candidate on this scale. Most findings that used to 
 
 | Situation | Register | Shape | Evidence needed |
 | --- | --- | --- | --- |
-| Correctness, contract or test gap in code **this** MR authored | `finding` | Normal comment: what happens, why it matters, what to do | `🎯` only |
-| Consequence the author may not have in view, in code they own | `ask` | One or two sentences: "this also does X — is that intended?" | `🎯` or `🧭` |
-| Code owned elsewhere (moved verbatim, sibling MR, other team), or a downstream effect you cannot verify | `heads-up` | One sentence, explicitly non-blocking: "flagging in case it is not on the radar — custom-resource-webhook MR 5 diffs https://gitlab.com/…/merge_requests/5/diffs changes this too" | any, `❔` typical |
+| Correctness, contract or test gap in code **this** MR authored | `finding` | Normal comment: what happens, why it matters, what to do | `:dart:` only |
+| Consequence the author may not have in view, in code they own | `ask` | One or two sentences: "this also does X — is that intended?" | `:dart:` or `:compass:` |
+| Code owned elsewhere (moved verbatim, sibling MR, other team), or a downstream effect you cannot verify | `heads-up` | One sentence, explicitly non-blocking: "flagging in case it is not on the radar — custom-resource-webhook MR 5 diffs https://gitlab.com/…/merge_requests/5/diffs changes this too" | any, `:grey_question:` typical |
 | Already decided in the ticket or an earlier thread | nothing, or a pointer | Do not re-litigate; at most link where it was decided | — |
 
 The register and the evidence marker both land on the signature line, and they constrain each other — see [Comment signature](#comment-signature-required). If a candidate cannot be verified, the interlocks force it down to a question, which is the mechanism that keeps a hunch from being written as a demand.
@@ -396,20 +394,20 @@ Every draft this skill writes — inline and overview, first pass and apply-feed
 ```
 
 ```text
-🤖 · finding · 🎯 verified (builder.py:94, k8s_client.py patch call)
-🤖 · ask · 🧭 inferred (k8s_client.py:98; which 404s occur in practice not verified)
-🤖 · heads-up · ❔ unverified (whether any client branches on that status)
-🤖+🧑‍💻 · nit · ❔ unverified (assumes both deploy paths coexist for a while)
-🧑‍💻
+:robot: · finding · :dart: verified (builder.py:94, k8s_client.py patch call)
+:robot: · ask · :compass: inferred (k8s_client.py:98; which 404s occur in practice not verified)
+:robot: · heads-up · :grey_question: unverified (whether any client branches on that status)
+:robot:+:technologist: · nit · :grey_question: unverified (assumes both deploy paths coexist for a while)
+:technologist:
 ```
 
 **Author** — who wrote the substance:
 
 | When | Author |
 | --- | --- |
-| Agent-only draft (no human edit of this comment yet) | `🤖` |
-| Shared authorship — agent finding refined with human bullets/decisions, or a discussion follow-up that still mixes agent analysis with human steering | `🤖+🧑‍💻` |
-| Human content — the body is **100%** the person's statement, decision, or wording (agent only posted / lightly formatted it for MR voice). Includes: "write this answer…", paste-my-words replies, and apply-feedback rewrites that replace the draft with the human's substance rather than merging it into an agent finding | `🧑‍💻` |
+| Agent-only draft (no human edit of this comment yet) | `:robot:` |
+| Shared authorship — agent finding refined with human bullets/decisions, or a discussion follow-up that still mixes agent analysis with human steering | `:robot:+:technologist:` |
+| Human content — the body is **100%** the person's statement, decision, or wording (agent only posted / lightly formatted it for MR voice). Includes: "write this answer…", paste-my-words replies, and apply-feedback rewrites that replace the draft with the human's substance rather than merging it into an agent finding | `:technologist:` |
 
 **Register** — `finding`, `ask`, `heads-up`, or `nit`, per [Register](#register-what-weight-does-this-finding-deserve). A `nit` keeps the `Nit: ` body prefix as well: the prefix is what a reader sees first, the marker line is the uniform footer.
 
@@ -417,24 +415,24 @@ Every draft this skill writes — inline and overview, first pass and apply-feed
 
 | Marker | Means | Parenthetical |
 | --- | --- | --- |
-| `🎯 verified` | The exact code, config or spec section that makes the claim true was opened on this branch (or run). Anyone can re-check it. | Optional: name the files/lines |
-| `🧭 inferred` | Follows from code that was read, but one step is reasoning — runtime behavior, controller reaction, Helm/Kubernetes semantics not exercised here. | **Required**: name the reasoning step |
-| `❔ unverified` | Rests on something that could not be opened: another repo's plans, cluster state, client behavior, team intent. | **Required**: name the assumption |
+| `:dart: verified` | The exact code, config or spec section that makes the claim true was opened on this branch (or run). Anyone can re-check it. | Optional: name the files/lines |
+| `:compass: inferred` | Follows from code that was read, but one step is reasoning — runtime behavior, controller reaction, Helm/Kubernetes semantics not exercised here. | **Required**: name the reasoning step |
+| `:grey_question: unverified` | Rests on something that could not be opened: another repo's plans, cluster state, client behavior, team intent. | **Required**: name the assumption |
 
 Interlocks between the two axes — these are hard:
 
-- `finding` requires `🎯`. A claim that cannot be re-checked cannot demand a change.
-- `🧭` caps the register at `ask`.
-- `❔` caps it at `heads-up` or `nit`, and the body says "not blocking" in words too.
-- A `🧑‍💻` line carries **no** register and **no** evidence marker — the substance is the human's, and this skill does not rate their confidence.
+- `finding` requires `:dart:`. A claim that cannot be re-checked cannot demand a change.
+- `:compass:` caps the register at `ask`.
+- `:grey_question:` caps it at `heads-up` or `nit`, and the body says "not blocking" in words too.
+- A `:technologist:` line carries **no** register and **no** evidence marker — the substance is the human's, and this skill does not rate their confidence.
 
 Naming the assumption is the point of the marker, not decoration: "assumes both deploy paths coexist" is a sentence the author can refute in seconds, which is exactly what should happen to a weak comment.
 
 - Do **not** put the signature mid-paragraph, on the same line as a closer, or omit it.
-- Use the Unicode emoji (`🤖`, `🧑‍💻`, `🎯`, `🧭`, `❔`) — not `:robot:` / `:technologist:` / `:question:` shortcodes.
-- Apply-feedback `PUT`s: strip instructional bullets, then pick `🤖+🧑‍💻` or `🧑‍💻` from the table (never leave a bare `🤖` after a human-steered rewrite). Prefer `🧑‍💻` when the rewritten body is essentially the human's decision in full; prefer `🤖+🧑‍💻` when the agent finding remains and the human only steered tone/scope/firmness.
-- Apply-feedback also re-checks the other two fields: a human decision that settles an assumption usually raises the evidence marker, and a rewrite from open question to firm ask raises the register — which then has to satisfy the interlocks above. Dropping to `🧑‍💻` drops both fields.
-- Re-review drafts that only restate an unresolved agent finding stay `🤖`; mixed or human-owned wording uses the rows above.
+- Use emoji shortcodes (`:robot:`, `:technologist:`, `:dart:`, `:compass:`, `:grey_question:`) — not raw Unicode characters.
+- Apply-feedback `PUT`s: strip instructional bullets, then pick `:robot:+:technologist:` or `:technologist:` from the table (never leave a bare `:robot:` after a human-steered rewrite). Prefer `:technologist:` when the rewritten body is essentially the human's decision in full; prefer `:robot:+:technologist:` when the agent finding remains and the human only steered tone/scope/firmness.
+- Apply-feedback also re-checks the other two fields: a human decision that settles an assumption usually raises the evidence marker, and a rewrite from open question to firm ask raises the register — which then has to satisfy the interlocks above. Dropping to `:technologist:` drops both fields.
+- Re-review drafts that only restate an unresolved agent finding stay `:robot:`; mixed or human-owned wording uses the rows above.
 - When editing a **published** note the same rules apply.
 
 ### Emoji in the body (optional, off by default)
@@ -445,9 +443,9 @@ Only add emoji in comment **bodies** (aside from the required signature) if the 
 - At most one body emoji per comment, placed just before the signature line (after the closer, or after the last sentence if there's no closer) — never mid-paragraph, never after the signature.
 - Vary the body emoji across comments; do not reuse the same one every time (e.g. don't default to `:thinking:` everywhere).
 - Match the emoji to the comment's nature: `:thinking:` for genuine uncertainty/doubt, `:bulb:` for a suggestion, `:slightly_smiling_face:` for a light nit or casual aside.
-- Use GitLab/GitHub emoji shortcodes for body emoji (`:thinking:`, not a raw Unicode character). The required signature stays `🤖`, `🤖+🧑‍💻`, or `🧑‍💻`.
+- Use GitLab/GitHub emoji shortcodes for body emoji (`:thinking:`, not a raw Unicode character). The required signature stays `:robot:`, `:robot:+:technologist:`, or `:technologist:`.
 
-The MR-level ready-signal awards and the thread-level ✅ awards below are separate from body emoji and from comment signatures — apply each only when its section says to.
+The MR-level ready-signal awards and the thread-level :white_check_mark: awards below are separate from body emoji and from comment signatures — apply each only when its section says to.
 
 ## Ready-to-merge signal
 
@@ -456,15 +454,15 @@ After finishing the review (first pass or re-review), if **both** are true:
 1. This review left **nothing that must change before merge** — no `Finding`-weight drafts. One or two non-blocking `Heads-up` or `Nit:` drafts do not withhold the signal; withholding it over them would only push the review back toward saying nothing.
 2. The MR looks ready to merge — acceptance criteria met, no correctness / contract / test / merge-risk findings worth raising.
 
-…then award the check mark button emoji (`white_check_mark` / ✅) plus the authorship reaction(s) on the **merge request itself** (not on a note). Classify who supplied the substance of the ready verdict using the same rules as [Comment signature](#comment-signature-required):
+…then award the check mark button emoji (`white_check_mark` / :white_check_mark:) plus the authorship reaction(s) on the **merge request itself** (not on a note). Classify who supplied the substance of the ready verdict using the same rules as [Comment signature](#comment-signature-required):
 
 | Ready verdict | MR-level authorship reactions |
 | --- | --- |
-| Agent-only | `robot` / 🤖 |
-| Shared — agent analysis refined by human decisions or steering | `robot` / 🤖 and `technologist` / 🧑‍💻 |
-| Human-only — the verdict is 100% the person's decision and the agent only carried it out | `technologist` / 🧑‍💻 |
+| Agent-only | `robot` / :robot: |
+| Shared — agent analysis refined by human decisions or steering | `robot` / :robot: and `technologist` / :technologist: |
+| Human-only — the verdict is 100% the person's decision and the agent only carried it out | `technologist` / :technologist: |
 
-Treat these as one ready signal with ✅. Before setting it, remove any prior `speech_balloon` / 💬 and any stale ready-signal awards (`white_check_mark`, `robot`, or `technologist`) by the current user, then award ✅ and exactly the reaction set in the table. Do not infer authorship from who opened or authored the MR; classify the review work that produced this ready verdict. Tell the user which reactions you awarded.
+Treat these as one ready signal with :white_check_mark:. Before setting it, remove any prior `speech_balloon` / :speech_balloon: and any stale ready-signal awards (`white_check_mark`, `robot`, or `technologist`) by the current user, then award :white_check_mark: and exactly the reaction set in the table. Do not infer authorship from who opened or authored the MR; classify the review work that produced this ready verdict. Tell the user which reactions you awarded.
 
 GitLab:
 
@@ -491,13 +489,13 @@ GitHub PRs have no equivalent `white_check_mark`, `robot`, or `technologist` iss
 
 ## Needs-work signal
 
-After a **re-review**, if this pass left a new `Finding`-weight draft (the MR is no longer merge-ready; pure optional nits, asks, and heads-ups do not trigger this), and the MR currently has a `white_check_mark` / ✅ from an earlier ready signal:
+After a **re-review**, if this pass left a new `Finding`-weight draft (the MR is no longer merge-ready; pure optional nits, asks, and heads-ups do not trigger this), and the MR currently has a `white_check_mark` / :white_check_mark: from an earlier ready signal:
 
 1. **Delete** the current user's MR-level `white_check_mark`, `robot`, and `technologist` awards that formed the earlier ready signal.
-2. **Award** the speech balloon button emoji (`speech_balloon` / 💬) on the **merge request itself**.
-3. Tell the user in the summary that the ready signal was replaced with 💬 because new required changes were drafted.
+2. **Award** the speech balloon button emoji (`speech_balloon` / :speech_balloon:) on the **merge request itself**.
+3. Tell the user in the summary that the ready signal was replaced with :speech_balloon: because new required changes were drafted.
 
-Do **not** leave any ready-signal reaction (✅, 🤖, or 🧑‍💻) alongside 💬 on the MR. Do **not** add 💬 on a first-pass review that never had ✅ — only when clearing a prior ready signal after a re-review found more required work.
+Do **not** leave any ready-signal reaction (:white_check_mark:, :robot:, or :technologist:) alongside :speech_balloon: on the MR. Do **not** add :speech_balloon: on a first-pass review that never had :white_check_mark: — only when clearing a prior ready signal after a re-review found more required work.
 
 GitLab:
 
@@ -511,7 +509,7 @@ POST  /projects/:id/merge_requests/:iid/award_emoji
       form: name=speech_balloon
 ```
 
-If there was no prior ✅, skip the delete; still skip adding 💬 unless a prior ready signal is being withdrawn. GitHub: skip MR-level reaction swap (same limitation as ready-to-merge).
+If there was no prior :white_check_mark:, skip the delete; still skip adding :speech_balloon: unless a prior ready signal is being withdrawn. GitHub: skip MR-level reaction swap (same limitation as ready-to-merge).
 
 ## Resolved threads on re-review
 
@@ -537,8 +535,8 @@ If a discussion was resolved too early and you still need to answer on it: **unr
 
 - Do **not** leave an acknowledgment reply (“Looks good”, “Works for me”, etc.).
 - Resolve the discussion.
-- Award the check mark button emoji (`white_check_mark` / ✅) on the **latest non-system note** in that discussion **only if the author (or another participant) replied** in the thread. That is usually the author’s reply.
-- If the thread still has only the reviewer’s own comment(s) — the fix landed in new commits with no discussion reply — **resolve only**; do **not** award ✅ on the reviewer’s own note.
+- Award the check mark button emoji (`white_check_mark` / :white_check_mark:) on the **latest non-system note** in that discussion **only if the author (or another participant) replied** in the thread. That is usually the author’s reply.
+- If the thread still has only the reviewer’s own comment(s) — the fix landed in new commits with no discussion reply — **resolve only**; do **not** award :white_check_mark: on the reviewer’s own note.
 
 GitLab:
 
@@ -556,18 +554,18 @@ PUT   /projects/:id/merge_requests/:iid/discussions/:discussion_id
       form: resolved=false
 ```
 
-**If the finding is only partly addressed**, leave a new draft (reply or fresh inline note) on what remains — do not resolve, do not award ✅.
+**If the finding is only partly addressed**, leave a new draft (reply or fresh inline note) on what remains — do not resolve, do not award :white_check_mark:.
 
-**If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still resolve the original thread when that original ask is done **and** no follow-up answer is pending (and award ✅ on the author’s reply only if one exists).
+**If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still resolve the original thread when that original ask is done **and** no follow-up answer is pending (and award :white_check_mark: on the author’s reply only if one exists).
 
 ## Withdrawing a published comment
 
 When a comment that is already published turns out not to belong in the review — wrong owner, already decided, speculation that did not hold — withdraw it rather than delete it. Deleting breaks thread continuity and leaves any replies answering nothing.
 
 - Strike the **entire body**, line by line: `~~…~~` does not span blank lines or paragraphs, so wrap each non-empty line on its own (`- ~~text~~` for bullets; leave a standalone `---` rule unstruck).
-- Leave the signature line plain — a struck emoji renders as noise — and update it per the signature table: a human-directed withdrawal is `🤖+🧑‍💻`.
+- Leave the signature line plain — a struck emoji renders as noise — and update it per the signature table: a human-directed withdrawal is `:robot:+:technologist:`.
 - Resolve the thread once struck.
-- Scripting this: `🧑‍💻` is `U+1F9D1 U+200D U+1F4BB`, and `U+1F4BB` falls **outside** the `U+1F900–U+1FAFF` block, so a range-based "is this the signature line" regex silently strikes the signature too. Match the signature strings literally.
+- Scripting this: match signature shortcodes literally (`:robot:`, `:robot:+:technologist:`, `:technologist:`) — do not strip or rewrite them with a broad emoji-range regex.
 - Never delete the author's notes or the user's own notes.
 
 ## Example shapes
@@ -583,7 +581,7 @@ We could decode only when the projection used a nested reshape, and leave plain 
 
 Does it make sense?
 
-🤖 · ask · 🎯 verified (projection.py:120-168)
+:robot: · ask · :dart: verified (projection.py:120-168)
 ```
 
 Open choice with related thread:
@@ -595,7 +593,7 @@ Related to the nit on `Projection.projections` in `types.py`: documenting relati
 
 Wdyt?
 
-🤖 · nit · 🎯 verified (resolver.py:88, types.py:41)
+:robot: · nit · :dart: verified (resolver.py:88, types.py:41)
 ```
 
 Ask — a consequence the author may not have in view, in code they own (see [Register](#register-what-weight-does-this-finding-deserve)):
@@ -603,7 +601,7 @@ Ask — a consequence the author may not have in view, in code they own (see [Re
 ```text
 This writes `spec.hotPath` on every call, so a request that only bumps `retentionDays` also resets `enabled`. Is that the behavior we want here?
 
-🤖 · ask · 🎯 verified (builder.py:94, k8s_client.py patch call)
+:robot: · ask · :dart: verified (builder.py:94, k8s_client.py patch call)
 ```
 
 One issue across several files — primary carries the reasoning and the site list (see [One issue, several sites](#one-issue-several-sites)):
@@ -619,7 +617,7 @@ Same divergence in all three places:
 
 Could we align them on `false`?
 
-🤖 · finding · 🎯 verified (both CRDs, models/custom_resources.py:18)
+:robot: · finding · :dart: verified (both CRDs, models/custom_resources.py:18)
 ```
 
 …and each sibling site is one line, nothing more:
@@ -627,7 +625,7 @@ Could we align them on `false`?
 ```text
 Same as `outputtopic-crd.yaml:93` (2/3).
 
-🤖 · finding · 🎯 verified
+:robot: · finding · :dart: verified
 ```
 
 Heads-up — owned elsewhere, explicitly non-blocking, with the assumption named:
@@ -635,7 +633,7 @@ Heads-up — owned elsewhere, explicitly non-blocking, with the assumption named
 ```text
 Not blocking: these CRDs are copies here, and custom-resource-webhook MR 5 diffs https://gitlab.com/cledar/cledar-platform/platform-integrations/custom-resource-webhook/-/merge_requests/5/diffs is changing the same `hotPath` defaults upstream. Flagging in case porting them is not already planned.
 
-🤖 · heads-up · ❔ unverified (whether the port is already planned)
+:robot: · heads-up · :grey_question: unverified (whether the port is already planned)
 ```
 
 Long finding, summarized first — reserved for findings this MR actually owns, never for an ask or a heads-up (see [TLDR for long comments](#tldr-for-long-comments)):
@@ -653,7 +651,7 @@ Downstream that is not inert: with `enabled: false` the controller stops the Rou
 
 Wdyt?
 
-🤖 · finding · 🎯 verified (builder.py:94, k8s_client.py:120; controller behavior per data-flow-controller MR 4 https://gitlab.com/cledar/cledar-platform/platform-integrations/data-flow-controller/-/merge_requests/4)
+:robot: · finding · :dart: verified (builder.py:94, k8s_client.py:120; controller behavior per data-flow-controller MR 4 https://gitlab.com/cledar/cledar-platform/platform-integrations/data-flow-controller/-/merge_requests/4)
 ```
 
 ## Checklist before finishing
@@ -682,13 +680,13 @@ Wdyt?
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
-- [ ] Every draft (inline and overview) ends with `<author> · <register> · <evidence>` alone on its final line after a blank line — `🧑‍💻` when the body is 100% human substance (and then no register/evidence); `🤖+🧑‍💻` for shared authorship; apply-feedback never leaves bare `🤖`
-- [ ] Evidence marker honest and interlocked: `finding` only with `🎯`, `🧭` capped at `ask`, `❔` capped at `heads-up` / `nit` with "not blocking" in the body; `🧭` and `❔` name the reasoning step or assumption in the parenthetical
+- [ ] Every draft (inline and overview) ends with `<author> · <register> · <evidence>` alone on its final line after a blank line — `:technologist:` when the body is 100% human substance (and then no register/evidence); `:robot:+:technologist:` for shared authorship; apply-feedback never leaves bare `:robot:`
+- [ ] Evidence marker honest and interlocked: `finding` only with `:dart:`, `:compass:` capped at `ask`, `:grey_question:` capped at `heads-up` / `nit` with "not blocking" in the body; `:compass:` and `:grey_question:` name the reasoning step or assumption in the parenthetical
 - [ ] Body emoji only if requested; not on every comment; varied, not repeated; skipped on serious findings; never after the signature; `PUT` updates include `position` alongside `note`
 - [ ] After posting: short draft summary **plus** two lines on steering drafts (edit/delete in UI, bullets under a draft)
 - [ ] Pass ends with an interactive `AskQuestion` (single choice, ≤4 applicable options, recommended first) — not a prose list of next steps; answer acted on in the same chat
 - [ ] Apply-feedback pass: only update drafts that still exist; never recreate user-deleted drafts unless explicitly asked; strip instructional bullets from the final draft text
-- [ ] No `Finding`-weight drafts + merge-ready → ready signal on the MR itself: ✅ plus 🤖 for agent-only, 🤖 + 🧑‍💻 for shared, or 🧑‍💻 for human-only; same authorship rules as comment signatures; clear stale current-user 💬 / ✅ / 🤖 / 🧑‍💻 awards first; never treat reactions as approval
-- [ ] Re-review left required-change drafts after a prior ready signal → delete the current user's MR-level ✅ / 🤖 / 🧑‍💻 ready reactions, award `speech_balloon` / 💬 instead; do not leave ready and needs-work reactions together
-- [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
+- [ ] No `Finding`-weight drafts + merge-ready → ready signal on the MR itself: :white_check_mark: plus :robot: for agent-only, :robot: + :technologist: for shared, or :technologist: for human-only; same authorship rules as comment signatures; clear stale current-user :speech_balloon: / :white_check_mark: / :robot: / :technologist: awards first; never treat reactions as approval
+- [ ] Re-review left required-change drafts after a prior ready signal → delete the current user's MR-level :white_check_mark: / :robot: / :technologist: ready reactions, award `speech_balloon` / :speech_balloon: instead; do not leave ready and needs-work reactions together
+- [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; :white_check_mark: (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
 - [ ] Never resolve a discussion that still has a pending draft reply or an unanswered follow-up being answered; unresolve first if an early resolve would hide the published answer
