@@ -4,7 +4,14 @@ description: >-
   Leave unpublished draft code-review comments on GitLab MRs (or GitHub PRs)
   with team-friendly voice, Nit labeling, cross-linked threads, natural
   closers (Wdyt?, Does it make sense?), and a one-line TLDR above a horizontal
-  rule on long comments. Grounds the review in the linked
+  rule on long comments. Signs every comment with author, register and an
+  evidence marker (🎯 verified / 🧭 inferred / ❔ unverified) so its weight
+  matches what the MR actually owns and what could be checked — findings only
+  for verified problems in code it authored, one-line non-blocking asks or
+  heads-ups for code moved unchanged, sibling MRs, or effects that cannot be
+  verified. Budgets that volume against the substantive size of the change
+  rather than the raw diff, and reports what it downgraded or dropped.
+  Grounds the review in the linked
   ticket's acceptance criteria and the specs it references. After posting,
   summarize drafts, explain how to steer them (bullets under drafts), and end
   every pass by asking the user what to do next as an interactive
@@ -34,12 +41,13 @@ Default comment language: **English** (unless the user requests otherwise).
 3. Load the ticket and the docs it references — see [Ticket and documentation context](#ticket-and-documentation-context).
 4. Check out the branch (shallow clone is enough) and read the changed files whole, plus the code paths they contract with — writers of a field a resolver reads, callers of a changed signature. Diff-only review misses mismatches that live in unchanged code.
 5. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
-6. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
-7. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If this is a **re-review** that left new drafts for required changes, follow [Needs-work signal](#needs-work-signal) instead.
-8. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ / 💬 was set on the MR). Keep drafts unpublished.
-9. After that summary, say briefly how to steer the drafts, then **ask what to do next as an interactive question** — see [After posting drafts](#after-posting-drafts).
-10. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
-11. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If it leaves new drafts for required changes, follow [Needs-work signal](#needs-work-signal).
+6. **Cut before posting.** Run every candidate finding through [Restraint](#restraint) — ownership, confidence, budget — and drop the ones that do not survive. This step is not optional and happens *before* any draft is created.
+7. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
+8. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If this is a **re-review** that left new drafts for required changes, follow [Needs-work signal](#needs-work-signal) instead.
+9. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ / 💬 was set on the MR), plus the [cut list](#tell-the-user-what-was-cut). Keep drafts unpublished.
+10. After that summary, say briefly how to steer the drafts, then **ask what to do next as an interactive question** — see [After posting drafts](#after-posting-drafts).
+11. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
+12. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If it leaves new drafts for required changes, follow [Needs-work signal](#needs-work-signal).
 
 ## Chat title
 
@@ -178,6 +186,82 @@ Platform Data Query API §7.3 (Data Object Queries) https://app.notion.com/p/34c
 
 Resolve the fragment from the fetched doc (in-page TOC links, "Copy link to block", or cross-links that already carry `#…`). If no block/heading URL is available after a reasonable look, link the page and keep the section name in the title — do not invent hashes.
 
+## Restraint
+
+Restraint here is about **weight, not silence**. Raising a topic is usually fine; presenting it as a blocker when it is really a question is what costs the reviewer credibility — and it is the reviewer's name on the thread, not this skill's. Review is shared learning, so "are we aware this also does X?" is a legitimate comment; "this must change" for something the author does not own is not.
+
+Sheer count matters too: a dozen blocker-shaped threads on a move/refactor MR reads as nitpicking regardless of how each one is worded. The fix is rarely to delete the topic — it is to say it in one sentence, as a question, and to let the author close it with one word.
+
+### Register: what weight does this finding deserve?
+
+Before drafting, place each candidate on this scale. Most findings that used to become essays belong in the lower two rows.
+
+| Situation | Register | Shape | Evidence needed |
+| --- | --- | --- | --- |
+| Correctness, contract or test gap in code **this** MR authored | `finding` | Normal comment: what happens, why it matters, what to do | `🎯` only |
+| Consequence the author may not have in view, in code they own | `ask` | One or two sentences: "this also does X — is that intended?" | `🎯` or `🧭` |
+| Code owned elsewhere (moved verbatim, sibling MR, other team), or a downstream effect you cannot verify | `heads-up` | One sentence, explicitly non-blocking: "flagging in case it is not on the radar — MR !5 changes this too" | any, `❔` typical |
+| Already decided in the ticket or an earlier thread | nothing, or a pointer | Do not re-litigate; at most link where it was decided | — |
+
+The register and the evidence marker both land on the signature line, and they constrain each other — see [Comment signature](#comment-signature-required). If a candidate cannot be verified, the interlocks force it down to a question, which is the mechanism that keeps a hunch from being written as a demand.
+
+- An `Ask` or `Heads-up` never gets a `**TLDR:**`, never gets three paragraphs of reasoning, and never carries an implied "before merge". Length signals weight, so keep the form matching the register.
+- Say the register out loud when it is not obvious: "not blocking, just checking" costs five words and prevents the author from reading a question as a demand.
+- If a `Heads-up` would still be the fourth one on the MR, it is better said to the user in chat than added to the pile.
+
+### Ownership check (before drafting anything)
+
+Ownership does not decide **whether** to raise something — it decides **how hard** to push. Establish it before writing:
+
+- **Moved or copied code.** When the MR relocates code between repos/paths, diff it against the source it came from. Behavior that arrived unchanged belongs to the origin, so it is at most an `Ask` here ("we are inheriting X — do we want to keep it?"), never a demand on this author. Fetch the origin file (`glab api …/repository/files/<path>/raw?ref=<branch>`) and compare instead of assuming.
+- **Another open MR / repo.** When the same code, schema or contract is being worked in a sibling MR, that MR owns the discussion. A one-line `Heads-up` naming it is useful; repeating its full analysis here is not.
+- **Already decided.** Check the ticket, the MR threads, and prior review rounds. A settled decision is not reopened by a review comment; if the diff quietly contradicts it, that contradiction is the finding, not the decision.
+- **Not in the diff's reach.** Resources the MR deliberately left behind, endpoints it does not touch, follow-up work with its own ticket — `Heads-up` at most, and only when someone could plausibly be unaware.
+
+### Confidence bar
+
+- What you can verify in the diff can be stated as a finding. What you cannot, ask about — the author usually has the context you are missing, and asking gets it into the thread faster than asserting.
+- Hedged endings — "worth being deliberate about", "worth coordinating" — mean the register is wrong, not that the topic is worthless. Rewrite as a plain question, or move it to the chat summary.
+- Downstream consumers, rollouts and other teams' plans are things the author knows better. If it seems worth raising, raise it as one question and accept a one-word answer.
+
+### Budget
+
+The cap scales with the **substantive** size of the change, not with the diff's line count. Substantive means what this MR actually authored: exclude verbatim moves, lockfiles, generated and vendored trees, and pure reformatting. A 400-line relocation of untouched YAML is zero substantive lines and earns a near-zero budget.
+
+Measure before drafting: `git diff --numstat <base>..<head>` over the files that survive the ownership check, then diff any moved file against its origin so only the divergence counts.
+
+Starting scale — a default to tune with the user, not a law:
+
+| Substantive change | Max `finding`-weight drafts, overview included |
+| --- | --- |
+| Move / rename with no divergence from origin | 0–3 |
+| Up to ~100 lines, or ≤3 files | 3 |
+| ~100–500 lines | 5 |
+| Over ~500 lines | 7, treated as a ceiling rather than a target |
+
+Three is the floor, not the target: small MRs do collect a few genuine fixes, and a pure move can still hold a couple worth raising. Zero stays a valid outcome.
+
+- The table caps **findings**. One-line `ask` / `heads-up` notes are cheaper, so up to **two** of them may sit on top of the cap — past that the pile-up becomes the message again.
+- At most **two** threads on any single file, of any register, unless they are siblings of one issue (below). Keep the strongest one.
+- More survivors than the cap means the ranking was not done. Rank by consequence, keep the top ones as findings, downgrade or drop the rest, and tell the user in chat.
+
+### One issue, several sites
+
+The same mistake repeated across files is **one** finding against the budget, however many threads it takes. Marking every occurrence beats keeping the count down: the marks are what makes the fix checkable later, and a wrong default that lives in three configs is only fixed when all three are.
+
+- Pick a **primary** thread — the first occurrence, or the one where the fix belongs — and put the reasoning there together with an explicit list of every site as `path:line`.
+- Every other occurrence gets a **one-line sibling** and nothing more: ``Same as `outputtopic-crd.yaml:93` (2/3).`` No repeated reasoning, no repeated links.
+- Same register and same evidence marker across the whole cluster. If they would differ, it is not one issue.
+- The cluster counts as **one** against the table, and its siblings are exempt from the two-threads-per-file cap.
+- Past roughly four sites, stop opening threads: keep the primary with the full list and say the remainder are identical.
+- On re-review, check each site separately: resolve each sibling as it lands, and keep the primary open until its list is fully done. That list is the checklist — which is the whole reason for marking every site in the first place.
+- If a pass still looks like it needs to exceed the cap, **stop before posting** and ask the user which to keep (`AskQuestion`). One question beforehand is cheaper than pruning a published review.
+- Length is part of the budget: prefer the shortest form that carries the ask. A multi-paragraph comment with a TLDR reads as a blocker even when it is only a question.
+
+### Tell the user what was cut
+
+The chat summary lists what was drafted, what was **downgraded** to a one-line question, and what was dropped — one line each, with the reason (owned by MR !5, already decided, could not verify). Raising a comment back up is easy for the user; discovering an overweight one after publication is not.
+
 ## What to comment on
 
 - Concrete technical findings with enough context to act on.
@@ -188,6 +272,11 @@ Resolve the fragment from the fetched doc (in-page TOC links, "Copy link to bloc
 
 ### Do not comment on
 
+These are about the **form**: none of them earns a demand on the author. Several are still fine as a one-line `Ask` or `Heads-up` — see [Register](#register-what-weight-does-this-finding-deserve).
+
+- Code that arrived unchanged in a move or copy, or behavior a sibling MR already owns — as anything firmer than a question.
+- Rollout sequencing, cutover coordination, who updates which client — as a review requirement. One non-blocking question is fine when it looks genuinely unnoticed.
+- Code paths the author has already said are going away, or tests they have said will be rewritten — a second comment there adds nothing.
 - Sparse or missing MR/PR descriptions, or a missing ticket reference — not a review problem.
 - The ticket's own wording or formatting — review the code, not the ticket.
 - Scope the ticket explicitly excludes, unless the diff silently depends on it.
@@ -253,6 +342,7 @@ GitLab and GitHub only surface inline comments on lines that appear in the MR/PR
 - Inclusive team pronouns: `we could`, `could we`, `would it make sense to…`.
 - Vary phrasing — do **not** lean on one template (avoid repeating `How about we…` every time).
 - Collaborative, not accusatory. Describe behavior and options; do not “call out” mistakes.
+- Review is shared learning, not gatekeeping. Asking whether the team has the consequence in view is a good comment; dressing the same thought as a required change is not.
 - Prefer light formatting. Do not overuse bold. Use inline code for identifiers, paths, types.
 
 ### Related comments
@@ -260,6 +350,7 @@ GitLab and GitHub only surface inline comments on lines that appear in the MR/PR
 - If two threads address the same decision space, **cross-link** them (file/symbol is enough).
 - State clearly when addressing one suggestion may cover or invalidate the other.
 - Do not duplicate the same ask in overview and inline.
+- Related threads are different asks that interact; **the same** ask repeated at several sites is a cluster with one primary and one-line siblings instead — see [One issue, several sites](#one-issue-several-sites).
 
 ### Closers (optional, only when natural)
 
@@ -276,29 +367,51 @@ Vary the closer across a review — do not reuse the same phrase (e.g. `Does it 
 
 ### Comment signature (required)
 
-Every draft this skill writes — inline and overview, first pass and apply-feedback rewrite — ends with a signature alone on its **own final line**, after a blank line (same spacing as a closer).
+Every draft this skill writes — inline and overview, first pass and apply-feedback rewrite — ends with a signature alone on its **own final line**, after a blank line (same spacing as a closer). The line carries three fields separated by ` · `:
 
-| When | Signature |
+```text
+<author> · <register> · <evidence> (<what was checked, or the assumption>)
+```
+
+```text
+🤖 · finding · 🎯 verified (builder.py:94, k8s_client.py patch call)
+🤖 · ask · 🧭 inferred (k8s_client.py:98; which 404s occur in practice not verified)
+🤖 · heads-up · ❔ unverified (whether any client branches on that status)
+🤖+🧑‍💻 · nit · ❔ unverified (assumes both deploy paths coexist for a while)
+🧑‍💻
+```
+
+**Author** — who wrote the substance:
+
+| When | Author |
 | --- | --- |
 | Agent-only draft (no human edit of this comment yet) | `🤖` |
 | Shared authorship — agent finding refined with human bullets/decisions, or a discussion follow-up that still mixes agent analysis with human steering | `🤖+🧑‍💻` |
 | Human content — the body is **100%** the person's statement, decision, or wording (agent only posted / lightly formatted it for MR voice). Includes: "write this answer…", paste-my-words replies, and apply-feedback rewrites that replace the draft with the human's substance rather than merging it into an agent finding | `🧑‍💻` |
 
-```text
-🤖
-```
+**Register** — `finding`, `ask`, `heads-up`, or `nit`, per [Register](#register-what-weight-does-this-finding-deserve). A `nit` keeps the `Nit: ` body prefix as well: the prefix is what a reader sees first, the marker line is the uniform footer.
 
-```text
-🤖+🧑‍💻
-```
+**Evidence** — what the claim rests on:
 
-```text
-🧑‍💻
-```
+| Marker | Means | Parenthetical |
+| --- | --- | --- |
+| `🎯 verified` | The exact code, config or spec section that makes the claim true was opened on this branch (or run). Anyone can re-check it. | Optional: name the files/lines |
+| `🧭 inferred` | Follows from code that was read, but one step is reasoning — runtime behavior, controller reaction, Helm/Kubernetes semantics not exercised here. | **Required**: name the reasoning step |
+| `❔ unverified` | Rests on something that could not be opened: another repo's plans, cluster state, client behavior, team intent. | **Required**: name the assumption |
+
+Interlocks between the two axes — these are hard:
+
+- `finding` requires `🎯`. A claim that cannot be re-checked cannot demand a change.
+- `🧭` caps the register at `ask`.
+- `❔` caps it at `heads-up` or `nit`, and the body says "not blocking" in words too.
+- A `🧑‍💻` line carries **no** register and **no** evidence marker — the substance is the human's, and this skill does not rate their confidence.
+
+Naming the assumption is the point of the marker, not decoration: "assumes both deploy paths coexist" is a sentence the author can refute in seconds, which is exactly what should happen to a weak comment.
 
 - Do **not** put the signature mid-paragraph, on the same line as a closer, or omit it.
-- Use the Unicode emoji (`🤖`, `🧑‍💻`) — not `:robot:` / `:technologist:` shortcodes.
+- Use the Unicode emoji (`🤖`, `🧑‍💻`, `🎯`, `🧭`, `❔`) — not `:robot:` / `:technologist:` / `:question:` shortcodes.
 - Apply-feedback `PUT`s: strip instructional bullets, then pick `🤖+🧑‍💻` or `🧑‍💻` from the table (never leave a bare `🤖` after a human-steered rewrite). Prefer `🧑‍💻` when the rewritten body is essentially the human's decision in full; prefer `🤖+🧑‍💻` when the agent finding remains and the human only steered tone/scope/firmness.
+- Apply-feedback also re-checks the other two fields: a human decision that settles an assumption usually raises the evidence marker, and a rewrite from open question to firm ask raises the register — which then has to satisfy the interlocks above. Dropping to `🧑‍💻` drops both fields.
 - Re-review drafts that only restate an unresolved agent finding stay `🤖`; mixed or human-owned wording uses the rows above.
 - When editing a **published** note the same rules apply.
 
@@ -318,7 +431,7 @@ The ✅ awards below (MR-level ready signal, and thread awards on re-review) are
 
 After finishing the review (first pass or re-review), if **both** are true:
 
-1. This review left **no draft comments** — no inline notes and no overview note.
+1. This review left **nothing that must change before merge** — no `Finding`-weight drafts. One or two non-blocking `Heads-up` or `Nit:` drafts do not withhold the signal; withholding it over them would only push the review back toward saying nothing.
 2. The MR looks ready to merge — acceptance criteria met, no correctness / contract / test / merge-risk findings worth raising.
 
 …then award the check mark button emoji (`white_check_mark` / ✅) on the **merge request itself** (not on a note). If a prior `speech_balloon` / 💬 is present from [Needs-work signal](#needs-work-signal), **delete that award first**, then award ✅. Tell the user in the summary that you awarded it.
@@ -335,7 +448,7 @@ POST  /projects/:id/merge_requests/:iid/award_emoji
       form: name=white_check_mark
 ```
 
-**Do not** award MR-level ✅ if you left any drafts, or if the change is not merge-ready (even if you somehow left no comments). This is only an emoji reaction — it is **not** an approval, publish, or merge. Still do not approve / request changes / submit unless the user asks.
+**Do not** award MR-level ✅ if you left any `Finding`-weight draft, or if the change is not merge-ready (even if you somehow left no comments). This is only an emoji reaction — it is **not** an approval, publish, or merge. Still do not approve / request changes / submit unless the user asks.
 
 GitHub PRs have no `white_check_mark` issue reaction — skip the MR-level award there; say so in the summary if the review was otherwise clean.
 
@@ -409,6 +522,16 @@ PUT   /projects/:id/merge_requests/:iid/discussions/:discussion_id
 
 **If a residual nit is distinct from the original ask**, keep it as a new draft on the relevant line; still resolve the original thread when that original ask is done **and** no follow-up answer is pending (and award ✅ on the author’s reply only if one exists).
 
+## Withdrawing a published comment
+
+When a comment that is already published turns out not to belong in the review — wrong owner, already decided, speculation that did not hold — withdraw it rather than delete it. Deleting breaks thread continuity and leaves any replies answering nothing.
+
+- Strike the **entire body**, line by line: `~~…~~` does not span blank lines or paragraphs, so wrap each non-empty line on its own (`- ~~text~~` for bullets; leave a standalone `---` rule unstruck).
+- Leave the signature line plain — a struck emoji renders as noise — and update it per the signature table: a human-directed withdrawal is `🤖+🧑‍💻`.
+- Resolve the thread once struck.
+- Scripting this: `🧑‍💻` is `U+1F9D1 U+200D U+1F4BB`, and `U+1F4BB` falls **outside** the `U+1F900–U+1FAFF` block, so a range-based "is this the signature line" regex silently strikes the signature too. Match the signature strings literally.
+- Never delete the author's notes or the user's own notes.
+
 ## Example shapes
 
 Doubt + suggestion:
@@ -422,7 +545,7 @@ We could decode only when the projection used a nested reshape, and leave plain 
 
 Does it make sense?
 
-🤖
+🤖 · ask · 🎯 verified (projection.py:120-168)
 ```
 
 Open choice with related thread:
@@ -434,10 +557,50 @@ Related to the nit on `Projection.projections` in `types.py`: documenting relati
 
 Wdyt?
 
-🤖
+🤖 · nit · 🎯 verified (resolver.py:88, types.py:41)
 ```
 
-Long finding, summarized first (see [TLDR for long comments](#tldr-for-long-comments)):
+Ask — a consequence the author may not have in view, in code they own (see [Register](#register-what-weight-does-this-finding-deserve)):
+
+```text
+This writes `spec.hotPath` on every call, so a request that only bumps `retentionDays` also resets `enabled`. Is that the behavior we want here?
+
+🤖 · ask · 🎯 verified (builder.py:94, k8s_client.py patch call)
+```
+
+One issue across several files — primary carries the reasoning and the site list (see [One issue, several sites](#one-issue-several-sites)):
+
+```text
+`hotPath.enabled` defaults to `true` on the property while the object default just above it says `false`, so a CR applying `hotPath: {}` gets hot path on, and the API sends `false`.
+
+Same divergence in all three places:
+
+- `charts/crds/outputtopic-crd.yaml:93`
+- `charts/crds/inputtopic-crd.yaml:102`
+- the description text above both ("When enabled (default)")
+
+Could we align them on `false`?
+
+🤖 · finding · 🎯 verified (both CRDs, models/custom_resources.py:18)
+```
+
+…and each sibling site is one line, nothing more:
+
+```text
+Same as `outputtopic-crd.yaml:93` (2/3).
+
+🤖 · finding · 🎯 verified
+```
+
+Heads-up — owned elsewhere, explicitly non-blocking, with the assumption named:
+
+```text
+Not blocking: these CRDs are copies here, and MR !5 https://gitlab.com/cledar/cledar-platform/platform-integrations/custom-resource-webhook/-/merge_requests/5 is changing the same `hotPath` defaults upstream. Flagging in case porting them is not already planned.
+
+🤖 · heads-up · ❔ unverified (whether the port is already planned)
+```
+
+Long finding, summarized first — reserved for findings this MR actually owns, never for an ask or a heads-up (see [TLDR for long comments](#tldr-for-long-comments)):
 
 ```text
 **TLDR:** every call that omits `hotPath` resets `enabled` to `false` on an existing CR — could we write the field only when the request carries it?
@@ -452,13 +615,20 @@ Downstream that is not inert: with `enabled: false` the controller stops the Rou
 
 Wdyt?
 
-🤖
+🤖 · finding · 🎯 verified (builder.py:94, k8s_client.py:120; controller behavior per data-flow-controller !4)
 ```
 
 ## Checklist before finishing
 
 - [ ] Chat renamed to `MR !<iid> (<JIRA-KEY>) - <author> - <context>` (or without `(<JIRA-KEY>)` when none); author is MR creator
 - [ ] Comments are drafts only (not published) unless the user asked to submit
+- [ ] Each draft sits at the right [register](#register-what-weight-does-this-finding-deserve) — findings only for code this MR authored; anything owned elsewhere or unverifiable is a one-line ask / heads-up, marked non-blocking, with no TLDR
+- [ ] [Ownership](#ownership-check-before-drafting-anything) established before writing: moved/copied code diffed against its origin, sibling MRs looked for, settled decisions not reopened
+- [ ] Finding count within the [budget](#budget) for the **substantive** change size (moves measured as divergence from origin, not raw lines); ≤2 extra one-liners; ≤2 threads per file; if more looked necessary, the user was asked **before** posting
+- [ ] Repeated occurrences of one issue marked at **every** site as a [cluster](#one-issue-several-sites) — primary carries the reasoning and the full `path:line` list, siblings are one-liners `Same as … (n/m)`, counted once against the budget
+- [ ] No hedged wording ("worth coordinating", "just flagging") — rewritten as a plain question or moved to the chat summary
+- [ ] Chat summary names what was drafted, what was downgraded, and what was dropped, with reasons
+- [ ] Withdrawn published comments struck line by line with the signature left plain, then resolved — never deleted
 - [ ] Every inline draft is on an added/removed/modified diff line (unchanged-code findings re-anchored or overview); no invisible unchanged-line pins
 - [ ] English (unless user requested another language)
 - [ ] Ticket read (or its absence noted to the user); referenced spec sections opened, not assumed
@@ -473,12 +643,13 @@ Wdyt?
 - [ ] Inclusive `we` voice; varied phrasing
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
-- [ ] Every draft (inline and overview) ends with `🤖`, `🤖+🧑‍💻`, or `🧑‍💻` alone on its final line after a blank line — `🧑‍💻` when the body is 100% human substance; `🤖+🧑‍💻` for shared authorship; apply-feedback never leaves bare `🤖`
+- [ ] Every draft (inline and overview) ends with `<author> · <register> · <evidence>` alone on its final line after a blank line — `🧑‍💻` when the body is 100% human substance (and then no register/evidence); `🤖+🧑‍💻` for shared authorship; apply-feedback never leaves bare `🤖`
+- [ ] Evidence marker honest and interlocked: `finding` only with `🎯`, `🧭` capped at `ask`, `❔` capped at `heads-up` / `nit` with "not blocking" in the body; `🧭` and `❔` name the reasoning step or assumption in the parenthetical
 - [ ] Body emoji only if requested; not on every comment; varied, not repeated; skipped on serious findings; never after the signature; `PUT` updates include `position` alongside `note`
 - [ ] After posting: short draft summary **plus** two lines on steering drafts (edit/delete in UI, bullets under a draft)
 - [ ] Pass ends with an interactive `AskQuestion` (single choice, ≤4 applicable options, recommended first) — not a prose list of next steps; answer acted on in the same chat
 - [ ] Apply-feedback pass: only update drafts that still exist; never recreate user-deleted drafts unless explicitly asked; strip instructional bullets from the final draft text
-- [ ] No drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself (remove prior 💬 first if present); otherwise skip; never treat that as approval
+- [ ] No `Finding`-weight drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself (remove prior 💬 first if present); non-blocking heads-ups / nits do not withhold it; never treat it as approval
 - [ ] Re-review left required-change drafts after a prior ✅ → delete MR-level `white_check_mark`, award `speech_balloon` / 💬 instead; do not leave both
 - [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
 - [ ] Never resolve a discussion that still has a pending draft reply or an unanswered follow-up being answered; unresolve first if an early resolve would hide the published answer
