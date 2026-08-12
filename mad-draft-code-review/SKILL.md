@@ -19,9 +19,12 @@ description: >-
   drafts the user deleted
   unless they explicitly ask. On re-review, resolve fixed threads (award ✅
   only when the author replied); do not leave acknowledgment replies. When a
-  review leaves no drafts and the MR looks ready to merge, award ✅ on the MR
-  itself. If a re-review instead leaves new required-change drafts, remove any
-  prior MR-level ✅ and replace it with 💬 (`speech_balloon`). Renames the chat
+  review leaves no required-change drafts and the MR looks ready to merge,
+  award ✅ plus
+  authorship reactions on the MR itself: 🤖 for agent work, 🤖 and 🧑‍💻 for
+  shared work, or 🧑‍💻 for human work. If a re-review instead leaves new
+  required-change drafts, remove the prior ready-signal reactions and award 💬
+  (`speech_balloon`) instead. Renames the chat
   to a fixed MR title format as soon as the MR is identified.
   Use when the user asks to review a merge request or pull request, open a
   draft review, add review comments without publishing, refine pending draft
@@ -43,11 +46,11 @@ Default comment language: **English** (unless the user requests otherwise).
 5. Review for correctness, edge cases, API contracts, tests, and unmet acceptance criteria.
 6. **Cut before posting.** Run every candidate finding through [Restraint](#restraint) — ownership, confidence, budget — and drop the ones that do not survive. This step is not optional and happens *before* any draft is created.
 7. Create **draft** inline notes on **diff lines only** (see [Anchor on diff lines](#anchor-on-diff-lines)) plus an optional general overview note.
-8. If this review left **no draft comments** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If this is a **re-review** that left new drafts for required changes, follow [Needs-work signal](#needs-work-signal) instead.
-9. Show the user a **short summary** of what was left as draft (or that none were needed, and whether ✅ / 💬 was set on the MR), plus the [cut list](#tell-the-user-what-was-cut). Keep drafts unpublished.
+8. If this review left **no required-change drafts** and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If this is a **re-review** that left new drafts for required changes, follow [Needs-work signal](#needs-work-signal) instead.
+9. Show the user a **short summary** of what was left as draft (or that none were needed, and which ready / needs-work reactions were set on the MR), plus the [cut list](#tell-the-user-what-was-cut). Keep drafts unpublished.
 10. After that summary, say briefly how to steer the drafts, then **ask what to do next as an interactive question** — see [After posting drafts](#after-posting-drafts).
 11. On a **follow-up apply pass** (user re-invokes this skill to process draft edits): follow [Apply draft feedback](#apply-draft-feedback). Do **not** republish deleted drafts.
-12. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If it leaves new drafts for required changes, follow [Needs-work signal](#needs-work-signal).
+12. On a **re-review** (new commits and/or author replies): verify prior threads against the current diff, then follow [Resolved threads on re-review](#resolved-threads-on-re-review). If that re-review also leaves no new required-change drafts and the MR looks ready to merge, follow [Ready-to-merge signal](#ready-to-merge-signal). If it leaves new drafts for required changes, follow [Needs-work signal](#needs-work-signal).
 
 ## Chat title
 
@@ -92,7 +95,7 @@ If the review target is GitHub, use `gh` pending-review APIs equivalently: creat
 
 End the user-facing reply with three parts, in this order:
 
-1. **Summary** — brief list of draft topics / files (or “no drafts; ✅ on MR” when applicable).
+1. **Summary** — brief list of draft topics / files (or “merge-ready; ✅ plus authorship reaction(s) on MR” when applicable).
 2. **How to steer the drafts** — two short lines, no more:
 
 - Edit or **delete** any draft in the MR UI; deleted drafts stay gone.
@@ -444,7 +447,7 @@ Only add emoji in comment **bodies** (aside from the required signature) if the 
 - Match the emoji to the comment's nature: `:thinking:` for genuine uncertainty/doubt, `:bulb:` for a suggestion, `:slightly_smiling_face:` for a light nit or casual aside.
 - Use GitLab/GitHub emoji shortcodes for body emoji (`:thinking:`, not a raw Unicode character). The required signature stays `🤖`, `🤖+🧑‍💻`, or `🧑‍💻`.
 
-The ✅ awards below (MR-level ready signal, and thread awards on re-review) are separate from body emoji and from the signature — apply each only when its section says to.
+The MR-level ready-signal awards and the thread-level ✅ awards below are separate from body emoji and from comment signatures — apply each only when its section says to.
 
 ## Ready-to-merge signal
 
@@ -453,7 +456,15 @@ After finishing the review (first pass or re-review), if **both** are true:
 1. This review left **nothing that must change before merge** — no `Finding`-weight drafts. One or two non-blocking `Heads-up` or `Nit:` drafts do not withhold the signal; withholding it over them would only push the review back toward saying nothing.
 2. The MR looks ready to merge — acceptance criteria met, no correctness / contract / test / merge-risk findings worth raising.
 
-…then award the check mark button emoji (`white_check_mark` / ✅) on the **merge request itself** (not on a note). If a prior `speech_balloon` / 💬 is present from [Needs-work signal](#needs-work-signal), **delete that award first**, then award ✅. Tell the user in the summary that you awarded it.
+…then award the check mark button emoji (`white_check_mark` / ✅) plus the authorship reaction(s) on the **merge request itself** (not on a note). Classify who supplied the substance of the ready verdict using the same rules as [Comment signature](#comment-signature-required):
+
+| Ready verdict | MR-level authorship reactions |
+| --- | --- |
+| Agent-only | `robot` / 🤖 |
+| Shared — agent analysis refined by human decisions or steering | `robot` / 🤖 and `technologist` / 🧑‍💻 |
+| Human-only — the verdict is 100% the person's decision and the agent only carried it out | `technologist` / 🧑‍💻 |
+
+Treat these as one ready signal with ✅. Before setting it, remove any prior `speech_balloon` / 💬 and any stale ready-signal awards (`white_check_mark`, `robot`, or `technologist`) by the current user, then award ✅ and exactly the reaction set in the table. Do not infer authorship from who opened or authored the MR; classify the review work that produced this ready verdict. Tell the user which reactions you awarded.
 
 GitLab:
 
@@ -461,32 +472,40 @@ GitLab:
 # If a prior needs-work balloon exists, remove it first:
 GET     /projects/:id/merge_requests/:iid/award_emoji
 DELETE  /projects/:id/merge_requests/:iid/award_emoji/:award_id
-        # only for name=speech_balloon awarded by the current user
+        # stale name=speech_balloon, white_check_mark, robot,
+        # or technologist awards
+        # only when awarded by the current user
 
 POST  /projects/:id/merge_requests/:iid/award_emoji
       form: name=white_check_mark
+POST  /projects/:id/merge_requests/:iid/award_emoji
+      form: name=robot
+POST  /projects/:id/merge_requests/:iid/award_emoji
+      form: name=technologist
+      # Post exactly the authorship reaction(s) selected by the table.
 ```
 
-**Do not** award MR-level ✅ if you left any `Finding`-weight draft, or if the change is not merge-ready (even if you somehow left no comments). This is only an emoji reaction — it is **not** an approval, publish, or merge. Still do not approve / request changes / submit unless the user asks.
+**Do not** award the MR-level ready signal if you left any `Finding`-weight draft, or if the change is not merge-ready (even if you somehow left no comments). These are only emoji reactions — they are **not** an approval, publish, or merge. Still do not approve / request changes / submit unless the user asks.
 
-GitHub PRs have no `white_check_mark` issue reaction — skip the MR-level award there; say so in the summary if the review was otherwise clean.
+GitHub PRs have no equivalent `white_check_mark`, `robot`, or `technologist` issue reactions — skip the MR-level ready signal there; say so in the summary if the review was otherwise clean.
 
 ## Needs-work signal
 
-After a **re-review**, if this pass left **new draft comments for required changes** (the MR is no longer merge-ready — any draft that would block [Ready-to-merge signal](#ready-to-merge-signal), including non-`Nit:` findings; pure optional nits alone do not trigger this), and the MR currently has a `white_check_mark` / ✅ from an earlier ready signal:
+After a **re-review**, if this pass left a new `Finding`-weight draft (the MR is no longer merge-ready; pure optional nits, asks, and heads-ups do not trigger this), and the MR currently has a `white_check_mark` / ✅ from an earlier ready signal:
 
-1. **Delete** the current user's MR-level `white_check_mark` award.
+1. **Delete** the current user's MR-level `white_check_mark`, `robot`, and `technologist` awards that formed the earlier ready signal.
 2. **Award** the speech balloon button emoji (`speech_balloon` / 💬) on the **merge request itself**.
-3. Tell the user in the summary that ✅ was replaced with 💬 because new required changes were drafted.
+3. Tell the user in the summary that the ready signal was replaced with 💬 because new required changes were drafted.
 
-Do **not** leave both ✅ and 💬 on the MR. Do **not** add 💬 on a first-pass review that never had ✅ — only when clearing a prior ready signal after a re-review found more required work.
+Do **not** leave any ready-signal reaction (✅, 🤖, or 🧑‍💻) alongside 💬 on the MR. Do **not** add 💬 on a first-pass review that never had ✅ — only when clearing a prior ready signal after a re-review found more required work.
 
 GitLab:
 
 ```text
 GET     /projects/:id/merge_requests/:iid/award_emoji
 DELETE  /projects/:id/merge_requests/:iid/award_emoji/:award_id
-        # only for name=white_check_mark awarded by the current user
+        # for name=white_check_mark, robot, or technologist
+        # only when awarded by the current user
 
 POST  /projects/:id/merge_requests/:iid/award_emoji
       form: name=speech_balloon
@@ -669,7 +688,7 @@ Wdyt?
 - [ ] After posting: short draft summary **plus** two lines on steering drafts (edit/delete in UI, bullets under a draft)
 - [ ] Pass ends with an interactive `AskQuestion` (single choice, ≤4 applicable options, recommended first) — not a prose list of next steps; answer acted on in the same chat
 - [ ] Apply-feedback pass: only update drafts that still exist; never recreate user-deleted drafts unless explicitly asked; strip instructional bullets from the final draft text
-- [ ] No `Finding`-weight drafts + merge-ready → ✅ (`white_check_mark`) on the MR itself (remove prior 💬 first if present); non-blocking heads-ups / nits do not withhold it; never treat it as approval
-- [ ] Re-review left required-change drafts after a prior ✅ → delete MR-level `white_check_mark`, award `speech_balloon` / 💬 instead; do not leave both
+- [ ] No `Finding`-weight drafts + merge-ready → ready signal on the MR itself: ✅ plus 🤖 for agent-only, 🤖 + 🧑‍💻 for shared, or 🧑‍💻 for human-only; same authorship rules as comment signatures; clear stale current-user 💬 / ✅ / 🤖 / 🧑‍💻 awards first; never treat reactions as approval
+- [ ] Re-review left required-change drafts after a prior ready signal → delete the current user's MR-level ✅ / 🤖 / 🧑‍💻 ready reactions, award `speech_balloon` / 💬 instead; do not leave ready and needs-work reactions together
 - [ ] Re-review: properly resolved threads are resolved with no acknowledgment reply; ✅ (`white_check_mark`) only on an author/participant reply — not when the thread is still only the reviewer’s comment(s)
 - [ ] Never resolve a discussion that still has a pending draft reply or an unanswered follow-up being answered; unresolve first if an early resolve would hide the published answer
