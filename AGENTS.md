@@ -9,20 +9,23 @@ bound to a specific project or company.
 - Examples, paths, ticket IDs, and URLs in skills must stay illustrative and reusable across contexts — or use placeholders.
 - If guidance only applies to one org or repo, keep it out of Mad Skills (put it in that project’s `AGENTS.md` / rules instead).
 
-## Dual host (Cursor + Claude Desktop)
+## Hosts (Cursor + Claude Desktop + Hermes Agent)
 
-Mad Skills target **Cursor** and **Claude Desktop** (including Claude cloud Skills uploads).
+Mad Skills target **Cursor**, **Claude Desktop** (including Claude cloud Skills
+uploads), and **Hermes Agent**.
 
 - Keep host-specific install paths and MCP config in separate files or clearly labeled sections. Do not hard-code only Cursor paths when MCP/install guidance is shared.
 - Cursor skills: global symlink under `~/.cursor/skills/Mad-Skills`.
 - Claude / cloud skills: per-skill zip artifacts from GitHub Releases (see `scripts/package-skill-zips.sh`); upload via Customize → Skills.
-- MCP templates: `mad-install-mcp-servers/mcp.cursor.json` and `mad-install-mcp-servers/mcp.claude.json`.
+- Hermes skills: Mad-Skills clone path listed under `skills.external_dirs` in `~/.hermes/config.yaml` (see [INSTALL.md](INSTALL.md)).
+- MCP templates: `mad-install-mcp-servers/mcp.cursor.json`, `mcp.claude.json`, and `mcp.hermes.json`.
 
 ## Env var independence
 
 - Cursor MCP uses `CURSOR_*` variables.
 - Claude Desktop MCP uses `CLAUDE_*` variables.
-- Never treat them as interchangeable. When renaming or adding a var, update the matching host template, `scripts/ensure-env-exports.sh` (`CURSOR_VARS` / `CLAUDE_VARS`), and the skill env tables together.
+- Hermes Agent MCP uses `HERMES_*` variables (prefer `~/.hermes/.env`).
+- Never treat them as interchangeable. When renaming or adding a var, update the matching host template, `scripts/ensure-env-exports.sh` (`CURSOR_VARS` / `CLAUDE_VARS` / `HERMES_VARS`), and the skill env tables together.
 
 ## Releases and versioning
 

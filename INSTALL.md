@@ -19,11 +19,12 @@ only when the user asks for it, or when SSH to GitHub is unavailable.
 
 ### 1. Ask host (always)
 
-Stop and ask the user to choose **one**:
+Stop and ask the user to choose **one or more**:
 
 - **Cursor**
 - **Claude Desktop** (includes Claude cloud Skills upload)
-- **Both**
+- **Hermes Agent**
+- **Multiple** (run skills/MCP steps once per chosen host)
 
 Wait for their answer before mutating anything.
 
@@ -39,7 +40,7 @@ Wait for their answer before mutating anything.
 
 ### 3. Skills path (Skills only or Skills + MCP)
 
-#### Cursor
+#### Shared clone (Cursor and/or Hermes)
 
 **Clone directory**
 
@@ -58,6 +59,8 @@ git clone git@github.com:arog-lahcim/Mad-Skills.git ~/Mad-Skills
 (Adjust destination to the user’s chosen path. Switch to the HTTPS URL only if
 the user prefers it or SSH fails.)
 
+#### Cursor
+
 **Symlink**
 
 ```bash
@@ -71,6 +74,34 @@ resolve to the intended clone, stop and ask before replacing. Do not silently ov
 After linking, confirm with `ls -la ~/.cursor/skills/Mad-Skills` and list skill
 dirs (`*/SKILL.md` under the clone). Tell the user to reload Cursor / check
 **Customize → Skills** (user scope) if skills were newly linked.
+
+#### Hermes Agent
+
+Do **not** create a Cursor skills symlink for Hermes-only installs (unless Cursor
+was also chosen).
+
+Prefer **`skills.external_dirs`** so Hermes scans the Mad-Skills clone (each
+`mad-*/SKILL.md` child folder is a skill):
+
+1. Ensure the clone exists (shared clone steps above).
+2. Read `~/.hermes/config.yaml` (create a minimal file only if missing — never wipe
+   unrelated Hermes keys).
+3. Under `skills.external_dirs`, add the **absolute** clone path if absent. Example:
+
+```yaml
+skills:
+  external_dirs:
+    - /absolute/path/to/Mad-Skills
+```
+
+Preserve any existing `external_dirs` entries. Expand `~` if writing a home-relative path.
+
+4. Confirm with `hermes skills list` (or `/skills`) that Mad Skills names appear.
+   New sessions pick up external skills; mention `/reset` if the current session
+   still looks stale.
+
+Optional alternative (only if the user asks): copy or symlink individual skill
+folders into `~/.hermes/skills/` instead of `external_dirs`.
 
 #### Claude Desktop / cloud
 
@@ -94,11 +125,12 @@ Resolve `mad-install-mcp-servers/SKILL.md` from:
 
 - the clone just linked / used, or
 - `~/.cursor/skills/Mad-Skills/mad-install-mcp-servers/SKILL.md` if already installed, or
+- a Hermes `external_dirs` Mad-Skills clone, or
 - the local checkout used for this install
 
 **Read that skill and follow it fully** for the chosen host(s) (merge into the
-host config, env stubs, CLIs, then mad-check-connections). Do not re-implement
-MCP install here.
+host config, env stubs, CLIs, then verification). Do not re-implement MCP install
+here.
 
 For **MCP only** without any Mad-Skills tree available: clone (or fetch) enough
 of the repo to read `mad-install-mcp-servers/`, then follow that skill — ask
@@ -114,22 +146,23 @@ that path was skipped):
 
 | Item | Value |
 |------|--------|
-| Host | Cursor / Claude Desktop / Both |
+| Host | Cursor / Claude Desktop / Hermes Agent / Multiple |
 | Scope | Skills only / Skills + MCP / MCP only |
 | Remote | git@github.com:arog-lahcim/Mad-Skills.git (or HTTPS if the user chose that) |
 | Clone | <path or n/a> |
 | Cursor symlink | ~/.cursor/skills/Mad-Skills → <target or n/a / unchanged> |
+| Hermes external_dirs | <path listed or n/a / unchanged> |
 | Claude skills | uploaded from release zips / local zips / n/a |
 | Skills | <comma-separated skill folder names, or n/a> |
 
-<If MCP ran: include the MCP install table and connection report from those skills.>
+<If MCP ran: include the MCP install table and connection/verification notes from those skills.>
 ```
 
 ## Do not
 
 - Create a `mad-install` skill or put this guide under a `SKILL.md`
 - Skip the host or scope prompt
-- Force-replace an existing skills symlink without asking
+- Force-replace an existing skills symlink or wipe Hermes `config.yaml` without asking
 - Write secrets into files (MCP skill handles empty env stubs only)
 - Push, commit, or edit skills as part of install
-- Assume `CURSOR_*` and `CLAUDE_*` env vars are interchangeable
+- Assume `CURSOR_*`, `CLAUDE_*`, and `HERMES_*` env vars are interchangeable
