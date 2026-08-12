@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:HERMES_GITHUB_TOKEN}"
+      }
+    },
+    "notion": {
+      "url": "https://mcp.notion.com/mcp",
+      "auth": "oauth"
+    },
+    "gitlab": {
+      "command": "npx",
+      "args": ["-y", "@ttpears/gitlab-mcp-server@latest"],
+      "env": {
+        "GITLAB_URL": "https://gitlab.com",
+        "GITLAB_TOKEN": "${env:HERMES_GITLAB_TOKEN}"
+      }
+    },
+    "mcp-atlassian": {
+      "command": "uvx",
+      "args": ["mcp-atlassian"],
+      "env": {
+        "JIRA_URL": "${env:HERMES_JIRA_URL}",
+        "JIRA_USERNAME": "${env:HERMES_JIRA_USERNAME}",
+        "JIRA_API_TOKEN": "${env:HERMES_JIRA_API_TOKEN}",
+        "CONFLUENCE_URL": "${env:HERMES_CONFLUENCE_URL}",
+        "CONFLUENCE_USERNAME": "${env:HERMES_CONFLUENCE_USERNAME}",
+        "CONFLUENCE_API_TOKEN": "${env:HERMES_CONFLUENCE_API_TOKEN}"
+      }
+    }
+  }
+}

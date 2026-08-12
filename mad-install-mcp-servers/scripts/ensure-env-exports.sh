@@ -5,6 +5,7 @@
 # Hosts stay independent:
 #   --host cursor  → CURSOR_* vars (Cursor ~/.cursor/mcp.json)
 #   --host claude  → CLAUDE_* vars (Claude Desktop claude_desktop_config.json)
+#   --host hermes  → HERMES_* vars (Hermes ~/.hermes/config.yaml + ~/.hermes/.env)
 set -euo pipefail
 
 CURSOR_VARS=(
@@ -29,6 +30,17 @@ CLAUDE_VARS=(
   CLAUDE_CONFLUENCE_API_TOKEN
 )
 
+HERMES_VARS=(
+  HERMES_GITHUB_TOKEN
+  HERMES_GITLAB_TOKEN
+  HERMES_JIRA_URL
+  HERMES_JIRA_USERNAME
+  HERMES_JIRA_API_TOKEN
+  HERMES_CONFLUENCE_URL
+  HERMES_CONFLUENCE_USERNAME
+  HERMES_CONFLUENCE_API_TOKEN
+)
+
 HOST=""
 REQUIRED_VARS=()
 MARKER_BEGIN=""
@@ -38,18 +50,20 @@ RESTART_APP=""
 usage() {
   cat <<'EOF'
 Usage:
-  ensure-env-exports.sh --host cursor|claude status
-  ensure-env-exports.sh --host cursor|claude suggest
-  ensure-env-exports.sh --host cursor|claude append --file PATH [--dry-run]
+  ensure-env-exports.sh --host cursor|claude|hermes status
+  ensure-env-exports.sh --host cursor|claude|hermes suggest
+  ensure-env-exports.sh --host cursor|claude|hermes append --file PATH [--dry-run]
 
 --host   Required. Selects which independent env var set to manage:
          cursor → CURSOR_* (Cursor MCP)
          claude → CLAUDE_* (Claude Desktop MCP)
+         hermes → HERMES_* (Hermes Agent MCP)
 
 status   Print set|MISSING for each required var (values never printed).
-suggest  Print recommended env file and candidates for this shell/OS.
-append   Append empty `export NAME=` stubs for vars that are MISSING in the
+suggest  Print recommended path and candidate files (exists/missing).
+append   Append empty NAME= stubs for vars that are MISSING in the
          environment and not already declared in PATH. Creates the file if needed.
+         Shell files get `export NAME=`; ~/.hermes/.env gets `NAME=` (no export).
 
 Never pass secret values to this script; fill them by hand after append.
 EOF
@@ -72,8 +86,15 @@ set_host() {
       MARKER_END="# <<< mad-install-mcp-servers:claude <<<"
       RESTART_APP="Claude Desktop"
       ;;
+    hermes)
+      HOST="hermes"
+      REQUIRED_VARS=("${HERMES_VARS[@]}")
+      MARKER_BEGIN="# >>> mad-install-mcp-servers:hermes >>>"
+      MARKER_END="# <<< mad-install-mcp-servers:hermes <<<"
+      RESTART_APP="Hermes Agent"
+      ;;
     *)
-      printf 'error: --host must be cursor or claude (got: %s)\n' "$h" >&2
+      printf 'error: --host must be cursor, claude, or hermes (got: %s)\n' "$h" >&2
       usage >&2
       exit 2
       ;;
@@ -100,6 +121,10 @@ shell_name() {
 candidate_files() {
   local sh
   sh="$(shell_name)"
+  if [[ "$HOST" == "hermes" ]]; then
+    # Hermes resolves ${env:VAR} from ~/.hermes/.env then the process env.
+    printf '%s\n' "$HOME/.hermes/.env"
+  fi
   case "$sh" in
     zsh|-zsh)
       printf '%s\n' "$HOME/.zshenv" "$HOME/.zprofile" "$HOME/.zshrc"
@@ -165,7 +190,11 @@ cmd_suggest() {
       printf '  %s (missing)\n' "$f"
     fi
   done < <(candidate_files)
-  printf 'note=On macOS, prefer ~/.zshenv so login and non-interactive shells see the vars; fully quit and reopen %s after editing. GUI apps may not inherit terminal-only env.\n' "$RESTART_APP"
+  if [[ "$HOST" == "hermes" ]]; then
+    printf 'note=Prefer ~/.hermes/.env for Hermes secrets (loaded into MCP ${env:…} scope). After editing, run /reload-mcp in Hermes or restart Hermes Agent.\n'
+  else
+    printf 'note=On macOS, prefer ~/.zshenv so login and non-interactive shells see the vars; fully quit and reopen %s after editing. GUI apps may not inherit terminal-only env.\n' "$RESTART_APP"
+  fi
 }
 
 vars_to_append() {
@@ -223,13 +252,28 @@ cmd_append() {
     exit 0
   fi
 
+  local use_export=1
+  local base
+  base="$(basename "$file")"
+  if [[ "$base" == ".env" ]]; then
+    use_export=0
+  fi
+
   local block
   block="$(
     {
       printf '%s\n' "$MARKER_BEGIN"
-      printf '# Fill values below; do not commit secrets. Restart %s after saving.\n' "$RESTART_APP"
+      if [[ "$HOST" == "hermes" ]]; then
+        printf '# Fill values below; do not commit secrets. Then /reload-mcp or restart Hermes Agent.\n'
+      else
+        printf '# Fill values below; do not commit secrets. Restart %s after saving.\n' "$RESTART_APP"
+      fi
       for v in "${pending[@]}"; do
-        printf 'export %s=\n' "$v"
+        if [[ "$use_export" -eq 1 ]]; then
+          printf 'export %s=\n' "$v"
+        else
+          printf '%s=\n' "$v"
+        fi
       done
       printf '%s\n' "$MARKER_END"
     }
@@ -257,7 +301,11 @@ cmd_append() {
   printf 'file=%s\n' "$file"
   printf 'action=appended\n'
   printf 'appended_vars=%s\n' "${pending[*]}"
-  printf 'detail=fill empty export values, then fully quit and reopen %s\n' "$RESTART_APP"
+  if [[ "$HOST" == "hermes" ]]; then
+    printf 'detail=fill empty values, then /reload-mcp in Hermes or restart Hermes Agent\n'
+  else
+    printf 'detail=fill empty export values, then fully quit and reopen %s\n' "$RESTART_APP"
+  fi
 }
 
 parse_global_args() {
@@ -279,7 +327,7 @@ parse_global_args() {
     esac
   done
   if [[ -z "$HOST" ]]; then
-    printf 'error: --host cursor|claude is required\n' >&2
+    printf 'error: --host cursor|claude|hermes is required\n' >&2
     usage >&2
     exit 2
   fi
