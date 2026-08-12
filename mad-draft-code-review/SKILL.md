@@ -186,6 +186,25 @@ Platform Data Query API §7.3 (Data Object Queries) https://app.notion.com/p/34c
 
 Resolve the fragment from the fetched doc (in-page TOC links, "Copy link to block", or cross-links that already carry `#…`). If no block/heading URL is available after a reasonable look, link the page and keep the section name in the title — do not invent hashes.
 
+### GitLab autolink traps (`!N`, `#N`)
+
+GitLab **rewrites** bare `!N` / `#N` in note bodies to a reference in the **project where the note is posted**, not the project named in surrounding prose. Writing `custom-resource-webhook !5` on a `platform-api` MR still links to `platform-api!5` — often a wrong, unrelated (even merged) MR. The same trap applies to bare `#N` issue refs.
+
+In **draft / published note bodies** (inline, overview, replies):
+
+- **Never** write bare `!N` or `#N` when the target is another project — and prefer avoiding bare `!N` even for the current project when a URL is available.
+- In prose use a non-autolinking form: `MR 5`, `custom-resource-webhook MR 5`, or `issue 12` — **no** leading `!` / `#`.
+- Always pair the citation with a **full visible URL** (per `mad-visible-links`). Prefer the `/diffs` URL when the point is the change itself:
+
+```text
+custom-resource-webhook MR 5 diffs https://gitlab.com/cledar/cledar-platform/platform-integrations/custom-resource-webhook/-/merge_requests/5/diffs
+```
+
+- Do **not** rely on GitLab's `group/project!5` shorthand alone without the `https://…` URL next to it — many UIs still confuse readers, and the plaintext URL is what survives copy/paste.
+- Before posting or after an apply-feedback rewrite, scan the draft for bare `!\d+` / `#\d+` tokens and rewrite them.
+
+This rule applies only to **GitLab-rendered comment text**. Chat titles may still use `MR !<iid>` (see [Chat title](#chat-title)); that string is not posted as an MR note.
+
 ## Restraint
 
 Restraint here is about **weight, not silence**. Raising a topic is usually fine; presenting it as a blocker when it is really a question is what costs the reviewer credibility — and it is the reviewer's name on the thread, not this skill's. Review is shared learning, so "are we aware this also does X?" is a legitimate comment; "this must change" for something the author does not own is not.
@@ -200,7 +219,7 @@ Before drafting, place each candidate on this scale. Most findings that used to 
 | --- | --- | --- | --- |
 | Correctness, contract or test gap in code **this** MR authored | `finding` | Normal comment: what happens, why it matters, what to do | `🎯` only |
 | Consequence the author may not have in view, in code they own | `ask` | One or two sentences: "this also does X — is that intended?" | `🎯` or `🧭` |
-| Code owned elsewhere (moved verbatim, sibling MR, other team), or a downstream effect you cannot verify | `heads-up` | One sentence, explicitly non-blocking: "flagging in case it is not on the radar — MR !5 changes this too" | any, `❔` typical |
+| Code owned elsewhere (moved verbatim, sibling MR, other team), or a downstream effect you cannot verify | `heads-up` | One sentence, explicitly non-blocking: "flagging in case it is not on the radar — custom-resource-webhook MR 5 diffs https://gitlab.com/…/merge_requests/5/diffs changes this too" | any, `❔` typical |
 | Already decided in the ticket or an earlier thread | nothing, or a pointer | Do not re-litigate; at most link where it was decided | — |
 
 The register and the evidence marker both land on the signature line, and they constrain each other — see [Comment signature](#comment-signature-required). If a candidate cannot be verified, the interlocks force it down to a question, which is the mechanism that keeps a hunch from being written as a demand.
@@ -260,7 +279,7 @@ The same mistake repeated across files is **one** finding against the budget, ho
 
 ### Tell the user what was cut
 
-The chat summary lists what was drafted, what was **downgraded** to a one-line question, and what was dropped — one line each, with the reason (owned by MR !5, already decided, could not verify). Raising a comment back up is easy for the user; discovering an overweight one after publication is not.
+The chat summary lists what was drafted, what was **downgraded** to a one-line question, and what was dropped — one line each, with the reason (owned by custom-resource-webhook MR 5, already decided, could not verify). Raising a comment back up is easy for the user; discovering an overweight one after publication is not.
 
 ## What to comment on
 
@@ -595,7 +614,7 @@ Same as `outputtopic-crd.yaml:93` (2/3).
 Heads-up — owned elsewhere, explicitly non-blocking, with the assumption named:
 
 ```text
-Not blocking: these CRDs are copies here, and MR !5 https://gitlab.com/cledar/cledar-platform/platform-integrations/custom-resource-webhook/-/merge_requests/5 is changing the same `hotPath` defaults upstream. Flagging in case porting them is not already planned.
+Not blocking: these CRDs are copies here, and custom-resource-webhook MR 5 diffs https://gitlab.com/cledar/cledar-platform/platform-integrations/custom-resource-webhook/-/merge_requests/5/diffs is changing the same `hotPath` defaults upstream. Flagging in case porting them is not already planned.
 
 🤖 · heads-up · ❔ unverified (whether the port is already planned)
 ```
@@ -615,7 +634,7 @@ Downstream that is not inert: with `enabled: false` the controller stops the Rou
 
 Wdyt?
 
-🤖 · finding · 🎯 verified (builder.py:94, k8s_client.py:120; controller behavior per data-flow-controller !4)
+🤖 · finding · 🎯 verified (builder.py:94, k8s_client.py:120; controller behavior per data-flow-controller MR 4 https://gitlab.com/cledar/cledar-platform/platform-integrations/data-flow-controller/-/merge_requests/4)
 ```
 
 ## Checklist before finishing
@@ -636,6 +655,7 @@ Wdyt?
 - [ ] Spec citations in the code verified against the actual section; prerequisites the ticket declares confirmed as done
 - [ ] Ticket key, section number and revision/date cited precisely in drafts — no vague "per the spec"
 - [ ] Doc citations use visible deep links to the exact section/paragraph when available (title + full URL; no title-only links)
+- [ ] No bare GitLab `!N` / `#N` in note bodies (autolinks to the **current** project); cross-project refs use prose `MR N` / `issue N` plus a full visible URL (prefer `/diffs` when citing the change) — see [GitLab autolink traps](#gitlab-autolink-traps-n-n)
 - [ ] No praise/blame overview; no draft meta; no MR-description or missing-ticket nags; no source/base conflict or rebase/behind-target comments
 - [ ] Overview does not duplicate inline topics; no overview title; no rebase asks
 - [ ] Nits use `Nit: `; no other priority labels; bold used sparingly
