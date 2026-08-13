@@ -38,11 +38,11 @@ Do **not** invent passing statuses. When running inside Claude Desktop (or when
    **mad-install-mcp-servers** / [mcp.claude.json](../mad-install-mcp-servers/mcp.claude.json)).
 2. Confirm the user fully quit and relaunched Claude Desktop after config/env changes.
 3. Report each service as:
-   - `:white_circle: missing` — server key absent from config
-   - `:boom: error` — config present but user reports load failure / logs show startup errors
-   - `:closed_lock_with_key: needsAuth` — connector/OAuth still required (Notion, etc.)
+   - `⚪ missing` — server key absent from config
+   - `💥 error` — config present but user reports load failure / logs show startup errors
+   - `🔐 needsAuth` — connector/OAuth still required (Notion, etc.)
    - Otherwise ask the user to trigger a tiny read-only action in chat that would
-     use that MCP; only then mark `:white_check_mark: ok` or `:x: fail` from the observed result
+     use that MCP; only then mark `✅ ok` or `❌ fail` from the observed result
 4. Prefer naming expected `CLAUDE_*` env vars when tokens look unset.
 
 ### Hermes Agent (no Cursor MCP probe API)
@@ -56,12 +56,12 @@ Do **not** invent Cursor-style probes. When the host is Hermes:
 3. Confirm `HERMES_*` stubs are filled in `~/.hermes/.env` (or process env) when
    tokens look unset.
 4. Report each service as:
-   - `:white_circle: missing` — server key absent from `mcp_servers`
-   - `:boom: error` — config present but Hermes reports load/connect failure
-   - `:closed_lock_with_key: needsAuth` — OAuth still required (e.g. Notion:
+   - `⚪ missing` — server key absent from `mcp_servers`
+   - `💥 error` — config present but Hermes reports load/connect failure
+   - `🔐 needsAuth` — OAuth still required (e.g. Notion:
      `hermes mcp login notion`)
    - Otherwise ask the user to run a tiny read-only MCP action in Hermes; only
-     then mark `:white_check_mark: ok` or `:x: fail` from the observed result
+     then mark `✅ ok` or `❌ fail` from the observed result
 
 ## Workflow (Cursor)
 
@@ -73,18 +73,19 @@ Do **not** invent Cursor-style probes. When the host is Hermes:
    - **ready** — call the probe tool; success → `ok`, failure → `fail`
 3. Do not retry auth loops. One `mcp_auth` attempt per server max.
 4. Emit the report below. Keep it short — no dump of full API payloads.
+5. Rename the chat to reflect the overall status (see **Chat title**).
 
 ## Status values
 
-Always render Status as `emoji label` using this fixed map (never omit the emoji):
+Always render Status with the literal Unicode emoji and label from this fixed map. Do not use colon-delimited emoji shortcodes because Cursor chat displays them as text.
 
 | Status | Render as | Meaning |
 |--------|-----------|---------|
-| `ok` | `:white_check_mark: ok` | Probe succeeded; include a short identity hint (login, display name, or account id) |
-| `fail` | `:x: fail` | Server present but probe errored (auth, permission, or API) |
-| `needsAuth` | `:closed_lock_with_key: needsAuth` | Server requires authentication and is not usable yet |
-| `missing` | `:white_circle: missing` | MCP server not available in this session |
-| `error` | `:boom: error` | Server listed but in error/unavailable state |
+| `ok` | `✅ ok` | Probe succeeded; include a short identity hint (login, display name, or account id) |
+| `fail` | `❌ fail` | Server present but probe errored (auth, permission, or API) |
+| `needsAuth` | `🔐 needsAuth` | Server requires authentication and is not usable yet |
+| `missing` | `⚪ missing` | MCP server not available in this session |
+| `error` | `💥 error` | Server listed but in error/unavailable state |
 
 ## Report format
 
@@ -95,34 +96,48 @@ Use this exact structure (Markdown). Status column must include the emoji from t
 
 | Service | Status | Detail |
 |---------|--------|--------|
-| GitHub | :white_check_mark: ok | <short detail> |
-| GitLab | :x: fail | <short detail> |
-| Jira | :closed_lock_with_key: needsAuth | <short detail> |
-| Notion | :white_circle: missing | <short detail> |
+| GitHub | ✅ ok | <short detail> |
+| GitLab | ❌ fail | <short detail> |
+| Jira | 🔐 needsAuth | <short detail> |
+| Notion | ⚪ missing | <short detail> |
 
 **Summary:** <N>/4 ok
 ```
 
 Detail examples:
 
-- `:white_check_mark: ok` — `login=octocat` or `user=Jane Doe`
-- `:x: fail` — one-line error reason (no stack traces)
-- `:closed_lock_with_key: needsAuth` — `authenticate MCP server`
-- `:white_circle: missing` — `MCP server not configured — run mad-install-mcp-servers`
-- `:boom: error` — `serverStatus=error`
+- `✅ ok` — `login=octocat` or `user=Jane Doe`
+- `❌ fail` — one-line error reason (no stack traces)
+- `🔐 needsAuth` — `authenticate MCP server`
+- `⚪ missing` — `MCP server not configured — run mad-install-mcp-servers`
+- `💥 error` — `serverStatus=error`
 
 Optional one-liner after the table only if something is blocked: what the user should fix (enable MCP, re-auth, check token). No essays.
 
+## Chat title
+
+Running this skill is an explicit request to rename the chat. After emitting the report, call the `rename_chat` tool (server `cursor-app-control`) once with a title that encodes the overall status.
+
+- **Overall status is OK** only when all four services are `ok`.
+- **Overall status is FAILED** if any service is `fail`, `needsAuth`, `missing`, or `error`.
+
+Use the literal Unicode emoji in the title:
+
+- All ok → `✅ Connections | 4/4 OK`
+- Otherwise → `❌ Connections | FAILED <N>/4` (where `<N>` is the count of `ok` services)
+
+If `rename_chat` fails (e.g. the conversation can't be identified), skip silently — do not retry and do not report it as an error.
+
 ## When missing or misconfigured
 
-If any service is `:white_circle: missing`, or `:x: fail` / `:boom: error` looks like absent MCP config or bad server setup (not merely expired auth):
+If any service is `⚪ missing`, or `❌ fail` / `💥 error` looks like absent MCP config or bad server setup (not merely expired auth):
 
 - Point the user to **mad-install-mcp-servers** for the **same host**:
   - Cursor → `~/.cursor/mcp.json` + `CURSOR_*` vars
   - Claude Desktop → `claude_desktop_config.json` + `CLAUDE_*` vars
   - Hermes Agent → `~/.hermes/config.yaml` (`mcp_servers`) + `HERMES_*` vars
     (prefer `~/.hermes/.env`)
-- For `:closed_lock_with_key: needsAuth` alone on Cursor, prefer `mcp_auth` — do not treat that as an install problem.
+- For `🔐 needsAuth` alone on Cursor, prefer `mcp_auth` — do not treat that as an install problem.
 - For Hermes OAuth (e.g. Notion), prefer `hermes mcp login <server>`.
 - For token/URL env issues after the server is present, name the host-specific
   vars (`CURSOR_*`, `CLAUDE_*`, or `HERMES_*`) rather than inventing new ones or
