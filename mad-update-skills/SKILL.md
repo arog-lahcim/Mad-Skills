@@ -49,14 +49,15 @@ git pull
 
 ## Warp
 
-Warp uses per-skill symlinks (e.g. `~/.warp/skills/mad-*` or
-`~/.agents/skills/mad-*`) created by `scripts/link-skills.sh`. Updates come from
-`git pull` in the Mad-Skills clone those links point at.
+Warp uses the **Agent Skills catalog** layout (`<catalog>/<skill-name>/SKILL.md`)
+via per-skill symlinks from `scripts/link-skills.sh` (typically
+`~/.warp/skills/` or `~/.agents/skills/`). Updates come from `git pull` in the
+Mad-Skills clone those links point at. Catalog vs Cursor repo-folder layouts and
+overlap rules: see INSTALL.md / README **Agent Skills catalogs**.
 
-**Duplication warning:** if Cursor also uses `~/.cursor/skills/Mad-Skills`, do
-not also keep the same `mad-*` skills under `~/.agents/skills/` or as
-per-skill `~/.cursor/skills/mad-*` — Cursor scans those paths and will show
-duplicates. Prefer `~/.warp/skills/` for Warp in that setup.
+If Cursor also uses `~/.cursor/skills/Mad-Skills`, prefer `~/.warp/skills/` for
+Warp and do not also keep the same `mad-*` skills under `~/.agents/skills/` or as
+per-skill `~/.cursor/skills/mad-*`.
 
 ### Steps
 
