@@ -9,23 +9,38 @@ bound to a specific project or company.
 - Examples, paths, ticket IDs, and URLs in skills must stay illustrative and reusable across contexts — or use placeholders.
 - If guidance only applies to one org or repo, keep it out of Mad Skills (put it in that project’s `AGENTS.md` / rules instead).
 
-## Hosts (Cursor + Claude Desktop + Hermes Agent)
+## Hosts (Cursor + Claude Desktop / cloud + Hermes Agent + Warp)
 
 Mad Skills target **Cursor**, **Claude Desktop** (including Claude cloud Skills
-uploads), and **Hermes Agent**.
+uploads), **Hermes Agent**, and **Warp**.
 
 - Keep host-specific install paths and MCP config in separate files or clearly labeled sections. Do not hard-code only Cursor paths when MCP/install guidance is shared.
-- Cursor skills: global symlink under `~/.cursor/skills/Mad-Skills`.
+- **Agent Skills catalogs** (shared knowledge): many hosts load
+  `<catalog>/<skill-name>/SKILL.md` from dirs such as `~/.agents/skills/`,
+  `~/.warp/skills/`, and other home skill folders. Document that layout once;
+  do not bury it inside a single host section or mix it with Cursor-only
+  repo-folder install steps. `scripts/link-skills.sh` installs Mad Skills into a
+  chosen catalog. See [README.md](README.md) / [INSTALL.md](INSTALL.md).
+- Cursor skills: whole-repo symlink under `~/.cursor/skills/Mad-Skills`
+  (nested `mad-*/SKILL.md` — not the catalog shape). Cursor also scans catalog
+  paths (`~/.agents/skills/`, per-skill `~/.cursor/skills/<name>/`); linking the
+  same `mad-*` skills into those while the `Mad-Skills` symlink exists
+  duplicates skills in Cursor.
 - Claude / cloud skills: per-skill zip artifacts from GitHub Releases (see `scripts/package-skill-zips.sh`); upload via Customize → Skills.
 - Hermes skills: Mad-Skills clone path listed under `skills.external_dirs` in `~/.hermes/config.yaml` (see [INSTALL.md](INSTALL.md)).
-- MCP templates: `mad-install-mcp-servers/mcp.cursor.json`, `mcp.claude.json`, and `mcp.hermes.json`.
+- Warp skills: catalog install via `scripts/link-skills.sh` into
+  `~/.warp/skills/` (Warp-only / Warp+Cursor) or `~/.agents/skills/` (shared
+  cross-tool path when Cursor's `Mad-Skills` symlink is not also in use).
+- MCP templates: `mad-install-mcp-servers/mcp.cursor.json`, `mcp.claude.json`, `mcp.hermes.json`, and `mcp.warp.json`.
+- Warp MCP preferred target: `~/.warp/.mcp.json` (GUI / `/agent-add-mcp` / one-off `--mcp` are fallbacks). File installs: confirm via the JSON file and/or Settings; `oz mcp list` is account/Drive only. Skills verify: `oz agent skills` (not `oz agent list`).
 
 ## Env var independence
 
 - Cursor MCP uses `CURSOR_*` variables.
 - Claude Desktop MCP uses `CLAUDE_*` variables.
 - Hermes Agent MCP uses `HERMES_*` variables (prefer `~/.hermes/.env`).
-- Never treat them as interchangeable. When renaming or adding a var, update the matching host template, `scripts/ensure-env-exports.sh` (`CURSOR_VARS` / `CLAUDE_VARS` / `HERMES_VARS`), and the skill env tables together.
+- Warp MCP uses `WARP_*` variables.
+- Never treat them as interchangeable. When renaming or adding a var, update the matching host template, `scripts/ensure-env-exports.sh` (`CURSOR_VARS` / `CLAUDE_VARS` / `HERMES_VARS` / `WARP_VARS`), and the skill env tables together.
 
 ## Releases and versioning
 
@@ -76,6 +91,10 @@ In `SKILL.md` bodies (and sibling markdown in a skill folder):
   `:robot:+:technologist:` (not a raw ZWJ glyph).
 - Reaction **API** names stay bare (`white_check_mark`, `robot`, `technologist`)
   without surrounding colons — that is separate from markdown shortcodes.
+- **Exception:** `mad-check-connections` may use the fixed literal Unicode status
+  glyphs listed in that skill (`✅` `❌` `🔐` `⚪` `💥`) in the report and chat
+  title only, because Cursor chat renders `:shortcode:` as plain text there.
+  Do not spread that exception to other skills.
 
 Typography that is not emoji (em dash, arrows, curly quotes) is discouraged in
 frontmatter; in bodies, prefer ASCII (`-`, `->`, `...`, straight quotes) when

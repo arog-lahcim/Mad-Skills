@@ -2,17 +2,18 @@
 name: mad-check-connections
 description: >-
   Probe MCP auth for GitLab, GitHub, Jira, and Notion and emit a simple
-  connection report. Use when the user asks to check connections, test MCP
-  auth, verify integrations, diagnose missing GitLab/GitHub/Jira/Notion
-  access, or run mad-check-connections.
+  connection report for Cursor, Claude Desktop, Hermes Agent, or Warp. Use when
+  the user asks to check connections, test MCP auth, verify integrations,
+  diagnose missing GitLab/GitHub/Jira/Notion access, or run
+  mad-check-connections.
 ---
 
 # Check connections
 
 Verify the agent can reach the four required MCP services and report the result.
 
-If the active host is ambiguous, ask once: **Cursor**, **Claude Desktop**, or
-**Hermes Agent**.
+If the active host is ambiguous, ask once: **Cursor**, **Claude Desktop**,
+**Hermes Agent**, or **Warp**.
 
 ## Services under test
 
@@ -63,7 +64,38 @@ Do **not** invent Cursor-style probes. When the host is Hermes:
    - Otherwise ask the user to run a tiny read-only MCP action in Hermes; only
      then mark `✅ ok` or `❌ fail` from the observed result
 
-## Workflow (Cursor)
+### Warp (no Cursor MCP probe API)
+
+Do **not** invent Cursor-style probes. When the host is Warp:
+
+1. Confirm preferred servers are present in `~/.warp/.mcp.json` (see
+   **mad-install-mcp-servers** / [mcp.warp.json](../mad-install-mcp-servers/mcp.warp.json))
+   and/or under Settings -> Agents -> MCP servers (file-based entries often show
+   as detected from Warp). Optionally note account/Drive servers from
+   `oz mcp list` if `oz` is available — that list is **not** required for a
+   successful file install and may omit `~/.warp/.mcp.json` keys. Do **not**
+   require `oz` for this skill.
+2. After **env** (`WARP_*`) changes, confirm the user fully quit and relaunched
+   Warp. File-only edits to `~/.warp/.mcp.json` are usually auto-detected; do not
+   require a restart solely for JSON merges.
+3. Confirm `WARP_*` stubs are filled in the process env (prefer `~/.zshenv` on
+   macOS) when tokens look unset.
+4. Report each service as:
+   - `⚪ missing` — absent from `~/.warp/.mcp.json` and from Settings MCP (and
+     not listed by `oz mcp list` if that was checked)
+   - `💥 error` — present in config/Settings but Warp reports load failure
+   - `🔐 needsAuth` — OAuth still required (e.g. Notion in Settings -> Agents ->
+     MCP servers)
+   - Otherwise run a tiny read-only check: ask the user to trigger a read-only
+     action in the Warp agent against the already-configured server. If `oz` is
+     available and `oz mcp list` shows a UUID for that server,
+     `oz agent run --mcp <UUID> --prompt "…"` is an optional alternative. Only
+     then mark `✅ ok` or `❌ fail` from the observed result. Missing `oz` is
+     not an error by itself.
+
+## Workflow
+
+### Cursor
 
 1. Discover which of the four servers are present and their `serverStatus`.
 2. For each service, in parallel when possible:
@@ -73,7 +105,13 @@ Do **not** invent Cursor-style probes. When the host is Hermes:
    - **ready** — call the probe tool; success → `ok`, failure → `fail`
 3. Do not retry auth loops. One `mcp_auth` attempt per server max.
 4. Emit the report below. Keep it short — no dump of full API payloads.
-5. Rename the chat to reflect the overall status (see **Chat title**).
+5. Rename the chat (see **Chat title** — Cursor only).
+
+### Claude Desktop / Hermes Agent / Warp
+
+1. Follow the host-specific probe section above (config / `oz` / observed evidence).
+2. Emit the report below. Keep it short — no dump of full API payloads.
+3. Do **not** call Cursor `rename_chat` / `cursor-app-control` on these hosts.
 
 ## Status values
 
@@ -116,7 +154,9 @@ Optional one-liner after the table only if something is blocked: what the user s
 
 ## Chat title
 
-Running this skill is an explicit request to rename the chat. After emitting the report, call the `rename_chat` tool (server `cursor-app-control`) once with a title that encodes the overall status.
+**Cursor only.** After emitting the report on Cursor, call the `rename_chat` tool
+(server `cursor-app-control`) once with a title that encodes the overall status.
+On Claude Desktop, Hermes, or Warp, skip chat rename.
 
 - **Overall status is OK** only when all four services are `ok`.
 - **Overall status is FAILED** if any service is `fail`, `needsAuth`, `missing`, or `error`.
@@ -137,16 +177,20 @@ If any service is `⚪ missing`, or `❌ fail` / `💥 error` looks like absent 
   - Claude Desktop → `claude_desktop_config.json` + `CLAUDE_*` vars
   - Hermes Agent → `~/.hermes/config.yaml` (`mcp_servers`) + `HERMES_*` vars
     (prefer `~/.hermes/.env`)
+  - Warp → `~/.warp/.mcp.json` (confirm file and/or Settings; GUI / one-off
+    `--mcp` as fallbacks) + `WARP_*` vars
 - For `🔐 needsAuth` alone on Cursor, prefer `mcp_auth` — do not treat that as an install problem.
 - For Hermes OAuth (e.g. Notion), prefer `hermes mcp login <server>`.
+- For Warp OAuth (e.g. Notion), prefer Settings -> Agents -> MCP servers.
 - For token/URL env issues after the server is present, name the host-specific
-  vars (`CURSOR_*`, `CLAUDE_*`, or `HERMES_*`) rather than inventing new ones or
-  crossing hosts.
+  vars (`CURSOR_*`, `CLAUDE_*`, `HERMES_*`, or `WARP_*`) rather than inventing
+  new ones or crossing hosts.
 
 ## Do not
 
 - Skip a listed service
 - Write data to any service as part of the check
 - Invent a passing status without a successful probe (Cursor) or observed
-  evidence (Claude Desktop / Hermes Agent)
+  evidence (Claude Desktop / Hermes Agent / Warp)
+- Call Cursor-only rename/MCP introspection tools on Claude / Hermes / Warp
 - Expand the report with unrelated diagnostics unless the user asks
