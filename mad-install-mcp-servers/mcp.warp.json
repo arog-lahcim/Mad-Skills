@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${WARP_GITHUB_TOKEN}"
+      }
+    },
+    "notion": {
+      "url": "https://mcp.notion.com/mcp"
+    },
+    "gitlab": {
+      "command": "npx",
+      "args": ["-y", "@ttpears/gitlab-mcp-server@latest"],
+      "env": {
+        "GITLAB_URL": "https://gitlab.com",
+        "GITLAB_TOKEN": "${WARP_GITLAB_TOKEN}"
+      }
+    },
+    "mcp-atlassian": {
+      "command": "uvx",
+      "args": ["mcp-atlassian"],
+      "env": {
+        "JIRA_URL": "${WARP_JIRA_URL}",
+        "JIRA_USERNAME": "${WARP_JIRA_USERNAME}",
+        "JIRA_API_TOKEN": "${WARP_JIRA_API_TOKEN}",
+        "CONFLUENCE_URL": "${WARP_CONFLUENCE_URL}",
+        "CONFLUENCE_USERNAME": "${WARP_CONFLUENCE_USERNAME}",
+        "CONFLUENCE_API_TOKEN": "${WARP_CONFLUENCE_API_TOKEN}"
+      }
+    }
+  }
+}

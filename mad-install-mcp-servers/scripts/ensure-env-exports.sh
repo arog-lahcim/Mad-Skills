@@ -6,6 +6,7 @@
 #   --host cursor  → CURSOR_* vars (Cursor ~/.cursor/mcp.json)
 #   --host claude  → CLAUDE_* vars (Claude Desktop claude_desktop_config.json)
 #   --host hermes  → HERMES_* vars (Hermes ~/.hermes/config.yaml + ~/.hermes/.env)
+#   --host warp    → WARP_* vars (Warp ~/.warp/.mcp.json + process env)
 set -euo pipefail
 
 CURSOR_VARS=(
@@ -41,6 +42,17 @@ HERMES_VARS=(
   HERMES_CONFLUENCE_API_TOKEN
 )
 
+WARP_VARS=(
+  WARP_GITHUB_TOKEN
+  WARP_GITLAB_TOKEN
+  WARP_JIRA_URL
+  WARP_JIRA_USERNAME
+  WARP_JIRA_API_TOKEN
+  WARP_CONFLUENCE_URL
+  WARP_CONFLUENCE_USERNAME
+  WARP_CONFLUENCE_API_TOKEN
+)
+
 HOST=""
 REQUIRED_VARS=()
 MARKER_BEGIN=""
@@ -50,14 +62,15 @@ RESTART_APP=""
 usage() {
   cat <<'EOF'
 Usage:
-  ensure-env-exports.sh --host cursor|claude|hermes status
-  ensure-env-exports.sh --host cursor|claude|hermes suggest
-  ensure-env-exports.sh --host cursor|claude|hermes append --file PATH [--dry-run]
+  ensure-env-exports.sh --host cursor|claude|hermes|warp status
+  ensure-env-exports.sh --host cursor|claude|hermes|warp suggest
+  ensure-env-exports.sh --host cursor|claude|hermes|warp append --file PATH [--dry-run]
 
 --host   Required. Selects which independent env var set to manage:
          cursor → CURSOR_* (Cursor MCP)
          claude → CLAUDE_* (Claude Desktop MCP)
          hermes → HERMES_* (Hermes Agent MCP)
+         warp   → WARP_*   (Warp ~/.warp/.mcp.json)
 
 status   Print set|MISSING for each required var (values never printed).
 suggest  Print recommended path and candidate files (exists/missing).
@@ -93,8 +106,15 @@ set_host() {
       MARKER_END="# <<< mad-install-mcp-servers:hermes <<<"
       RESTART_APP="Hermes Agent"
       ;;
+    warp)
+      HOST="warp"
+      REQUIRED_VARS=("${WARP_VARS[@]}")
+      MARKER_BEGIN="# >>> mad-install-mcp-servers:warp >>>"
+      MARKER_END="# <<< mad-install-mcp-servers:warp <<<"
+      RESTART_APP="Warp"
+      ;;
     *)
-      printf 'error: --host must be cursor, claude, or hermes (got: %s)\n' "$h" >&2
+      printf 'error: --host must be cursor, claude, hermes, or warp (got: %s)\n' "$h" >&2
       usage >&2
       exit 2
       ;;
@@ -327,7 +347,7 @@ parse_global_args() {
     esac
   done
   if [[ -z "$HOST" ]]; then
-    printf 'error: --host cursor|claude|hermes is required\n' >&2
+    printf 'error: --host cursor|claude|hermes|warp is required\n' >&2
     usage >&2
     exit 2
   fi
