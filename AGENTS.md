@@ -15,10 +15,22 @@ Mad Skills target **Cursor**, **Claude Desktop** (including Claude cloud Skills
 uploads), **Hermes Agent**, and **Warp**.
 
 - Keep host-specific install paths and MCP config in separate files or clearly labeled sections. Do not hard-code only Cursor paths when MCP/install guidance is shared.
-- Cursor skills: global symlink under `~/.cursor/skills/Mad-Skills`.
+- **Agent Skills catalogs** (shared knowledge): many hosts load
+  `<catalog>/<skill-name>/SKILL.md` from dirs such as `~/.agents/skills/`,
+  `~/.warp/skills/`, and other home skill folders. Document that layout once;
+  do not bury it inside a single host section or mix it with Cursor-only
+  repo-folder install steps. `scripts/link-skills.sh` installs Mad Skills into a
+  chosen catalog. See [README.md](README.md) / [INSTALL.md](INSTALL.md).
+- Cursor skills: whole-repo symlink under `~/.cursor/skills/Mad-Skills`
+  (nested `mad-*/SKILL.md` — not the catalog shape). Cursor also scans catalog
+  paths (`~/.agents/skills/`, per-skill `~/.cursor/skills/<name>/`); linking the
+  same `mad-*` skills into those while the `Mad-Skills` symlink exists
+  duplicates skills in Cursor.
 - Claude / cloud skills: per-skill zip artifacts from GitHub Releases (see `scripts/package-skill-zips.sh`); upload via Customize → Skills.
 - Hermes skills: Mad-Skills clone path listed under `skills.external_dirs` in `~/.hermes/config.yaml` (see [INSTALL.md](INSTALL.md)).
-- Warp skills: per-skill symlinks via `scripts/link-skills.sh` into `~/.warp/skills/` (Warp-only / Warp+Cursor) or `~/.agents/skills/` (shared cross-tool path). Warn when the same `mad-*` skills would also be visible via Cursor's `Mad-Skills` symlink **and** `~/.agents/skills/` or per-skill `~/.cursor/skills/mad-*` — that duplicates skills in hosts that scan both.
+- Warp skills: catalog install via `scripts/link-skills.sh` into
+  `~/.warp/skills/` (Warp-only / Warp+Cursor) or `~/.agents/skills/` (shared
+  cross-tool path when Cursor's `Mad-Skills` symlink is not also in use).
 - MCP templates: `mad-install-mcp-servers/mcp.cursor.json`, `mcp.claude.json`, `mcp.hermes.json`, and `mcp.warp.json`.
 - Warp MCP preferred target: `~/.warp/.mcp.json` (GUI / `/agent-add-mcp` / one-off `--mcp` are fallbacks). File installs: confirm via the JSON file and/or Settings; `oz mcp list` is account/Drive only. Skills verify: `oz agent skills` (not `oz agent list`).
 

@@ -60,80 +60,26 @@ git clone git@github.com:arog-lahcim/Mad-Skills.git ~/Mad-Skills
 (Adjust destination to the user’s chosen path. Switch to the HTTPS URL only if
 the user prefers it or SSH fails.)
 
-#### Cursor
+#### Agent Skills catalogs
 
-**Symlink** the whole clone (Cursor discovers nested `mad-*/SKILL.md` under this
-path):
+Several hosts load skills from **catalog directories**. In that layout each skill
+is one folder (not nested under a `Mad-Skills/` repo folder):
 
-```bash
-mkdir -p ~/.cursor/skills
-ln -sfn /absolute/path/to/Mad-Skills ~/.cursor/skills/Mad-Skills
+```text
+<catalog>/<skill-name>/SKILL.md
 ```
 
-**Conflicts:** if `~/.cursor/skills/Mad-Skills` already exists and does **not**
-resolve to the intended clone, stop and ask before replacing. Do not silently
-overwrite.
+Common catalogs (a host may scan more than one):
 
-After linking, confirm with `ls -la ~/.cursor/skills/Mad-Skills` and list skill
-dirs (`*/SKILL.md` under the clone). Tell the user to reload Cursor / check
-**Customize → Skills** (user scope) if skills were newly linked.
-
-**Multi-host / duplication warning:** Cursor can discover skills both under
-`~/.cursor/skills/Mad-Skills/` (this symlink) **and** under
-`~/.agents/skills/<skill>/` or per-skill `~/.cursor/skills/<skill>/` (Agent
-Skills layout). Installing the same `mad-*` skills in both places duplicates
-them in Cursor. When Cursor is chosen:
-
-- Keep this `Mad-Skills` folder symlink for Cursor.
-- For Warp alongside Cursor, prefer `~/.warp/skills/` (see Warp below), **not**
-  `~/.agents/skills/` or per-skill `~/.cursor/skills/mad-*`, so the same skills
-  are not also linked into a path Cursor scans a second time.
-- Do not replace the Cursor `Mad-Skills` symlink with per-skill links under
-  `~/.cursor/skills/` unless the user explicitly asks.
-
-#### Warp
-
-Do **not** create a Cursor skills symlink for Warp-only installs (unless Cursor
-was also chosen).
-
-Warp discovers skills from global home-folder directories where each
-`SKILL.md` sits at `<dir>/<skill-name>/SKILL.md` (not nested under a
-`Mad-Skills/` folder):
-
-- `~/.warp/skills/` — Warp-dedicated (recommended for Warp-only **and** for
-  Warp + Cursor, to avoid duplication with the Cursor `Mad-Skills` symlink)
-- `~/.agents/skills/` — universal cross-tool path (useful when Warp shares a
-  tree with other hosts that scan it). **Warning:** Cursor also scans this
-  path; linking Mad Skills here **while** `~/.cursor/skills/Mad-Skills` exists
-  duplicates skills in Cursor. Prefer `~/.warp/skills/` when Cursor is also
-  installed, or ask the user which single layout they want.
+- `~/.agents/skills/` — shared across tools that use the Agent Skills home layout
+- `~/.warp/skills/` — Warp-dedicated
 - also: `~/.claude/skills/`, `~/.codex/skills/`, `~/.cursor/skills/`,
   `~/.copilot/skills/`, `~/.factory/skills/`, `~/.gemini/skills/`,
   `~/.github/skills/`, `~/.opencode/skills/`
 
-Note: `~/.cursor/skills/` only works for Warp if each skill is
-`~/.cursor/skills/<skill-name>/SKILL.md`. The Cursor Mad Skills layout
-(`~/.cursor/skills/Mad-Skills/mad-*/SKILL.md`) is **not** that shape — use
-`scripts/link-skills.sh` into a Warp-scanned target instead of relying on the
-Cursor folder symlink. **Do not** also create per-skill links under
-`~/.cursor/skills/mad-*` while the `Mad-Skills` folder symlink exists — that
-duplicates skills in Cursor the same way `~/.agents/skills/` does.
-
-**Ask the user** which target directory to use, based on the host(s) chosen:
-
-- Warp only → suggest `~/.warp/skills/` (Warp-dedicated).
-- Warp + Cursor → suggest `~/.warp/skills/` and keep the Cursor `Mad-Skills`
-  symlink; warn against also linking into `~/.agents/skills/` or per-skill
-  `~/.cursor/skills/mad-*` (duplication).
-- Warp + other non-Cursor hosts (no Cursor) → `~/.agents/skills/` is fine as a
-  shared tree.
-- Accept any other supported Warp skill directory above after stating the
-  duplication risk when Cursor's `Mad-Skills` symlink is also present.
-
-**Link each `mad-*/` skill folder individually** with
-`scripts/link-skills.sh` from the Mad-Skills clone root (idempotent; re-running
-replaces existing symlinks; only directories named `mad-*` with a `SKILL.md` are
-linked):
+`scripts/link-skills.sh` from the Mad-Skills clone root links each `mad-*/`
+skill folder into a chosen catalog (idempotent; re-running replaces existing
+symlinks; only directories named `mad-*` with a `SKILL.md` are linked):
 
 ```bash
 cd /absolute/path/to/Mad-Skills
@@ -156,6 +102,67 @@ Do not silently overwrite. After the user confirms, move or remove the
 conflicting path (e.g. `mv "$TARGET/mad-foo" "$TARGET/mad-foo.bak"`), then
 re-run `./scripts/link-skills.sh --target "$TARGET"`. The script has no
 `--force` flag.
+
+**Different from Cursor's Mad Skills install:** Cursor can also discover skills
+via a whole-repo symlink at `~/.cursor/skills/Mad-Skills`
+(`Mad-Skills/mad-*/SKILL.md`). That is **not** the catalog shape. Per-skill
+entries under `~/.cursor/skills/<skill-name>/` *are* catalog-shaped; the
+`Mad-Skills` folder symlink is not.
+
+**Overlap / duplicates:** if the same skill is visible under two catalogs a host
+scans, that host lists it twice. Cursor can see both
+`~/.cursor/skills/Mad-Skills/mad-*` and `~/.agents/skills/mad-*` or
+`~/.cursor/skills/mad-*`. Prefer one path per host. With Cursor's `Mad-Skills`
+symlink plus Warp, put Warp links under `~/.warp/skills/` — not into
+`~/.agents/skills/` or per-skill `~/.cursor/skills/mad-*`.
+
+#### Cursor
+
+**Symlink** the whole clone (Cursor discovers nested `mad-*/SKILL.md` under this
+path — not the catalog layout above):
+
+```bash
+mkdir -p ~/.cursor/skills
+ln -sfn /absolute/path/to/Mad-Skills ~/.cursor/skills/Mad-Skills
+```
+
+**Conflicts:** if `~/.cursor/skills/Mad-Skills` already exists and does **not**
+resolve to the intended clone, stop and ask before replacing. Do not silently
+overwrite.
+
+After linking, confirm with `ls -la ~/.cursor/skills/Mad-Skills` and list skill
+dirs (`*/SKILL.md` under the clone). Tell the user to reload Cursor / check
+**Customize → Skills** (user scope) if skills were newly linked.
+
+When Cursor is chosen:
+
+- Keep this `Mad-Skills` folder symlink for Cursor.
+- Do not also link the same `mad-*` skills into `~/.agents/skills/` or as
+  per-skill `~/.cursor/skills/mad-*` (see **Overlap / duplicates** above).
+- For Warp alongside Cursor, prefer `~/.warp/skills/` (see Warp below).
+- Do not replace the Cursor `Mad-Skills` symlink with per-skill links under
+  `~/.cursor/skills/` unless the user explicitly asks.
+
+#### Warp
+
+Do **not** create a Cursor skills symlink for Warp-only installs (unless Cursor
+was also chosen). Warp needs the **catalog** layout (see **Agent Skills
+catalogs**), not the Cursor `Mad-Skills` folder symlink.
+
+**Ask the user** which catalog to use, based on the host(s) chosen:
+
+- Warp only → suggest `~/.warp/skills/` (Warp-dedicated).
+- Warp + Cursor → suggest `~/.warp/skills/` and keep the Cursor `Mad-Skills`
+  symlink; do not also link into `~/.agents/skills/` or per-skill
+  `~/.cursor/skills/mad-*` (duplication).
+- Warp + other non-Cursor hosts (no Cursor) → `~/.agents/skills/` is fine as a
+  shared tree.
+- Accept any other supported catalog above after stating the duplication risk
+  when Cursor's `Mad-Skills` symlink is also present.
+
+Run `scripts/link-skills.sh --target <catalog>` from the clone root (commands and
+conflict rules are under **Agent Skills catalogs**).
+
 After linking, confirm with `ls -la "$TARGET"` and list skill dirs
 (`mad-*/SKILL.md` under the clone). Tell the user to fully quit and reopen Warp
 if skills were newly linked, then confirm with `oz agent skills` (or ask the

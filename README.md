@@ -17,29 +17,26 @@ follow it interactively.
 The agent loads and follows [INSTALL.md](INSTALL.md) (interactive: host choice,
 skills install, and/or MCP).
 
-## Warp (manual)
+## Agent Skills catalogs
 
-Warp discovers skills from global home-folder directories where each `SKILL.md`
-sits at `<dir>/<skill-name>/SKILL.md` (not nested under a `Mad-Skills/` folder):
+Several hosts load skills from **catalog directories**. In that layout each skill is
+one folder (not nested under a `Mad-Skills/` repo folder):
 
-- `~/.warp/skills/` — Warp-dedicated (recommended for Warp-only **and** for
-  Warp + Cursor)
-- `~/.agents/skills/` — universal cross-tool path. **Duplication warning:**
-  Cursor also scans this directory. If you already use
-  `~/.cursor/skills/Mad-Skills` for Cursor, linking the same `mad-*` skills
-  into `~/.agents/skills/` shows them twice in Cursor. Prefer
-  `~/.warp/skills/` for Warp when Cursor is also installed.
-- also: `~/.claude/skills/`, `~/.codex/skills/`, `~/.cursor/skills/`,
-  `~/.copilot/skills/`, `~/.factory/skills/`, `~/.gemini/skills/`,
-  `~/.github/skills/`, `~/.opencode/skills/`
+```text
+<catalog>/<skill-name>/SKILL.md
+```
 
-Pick a target directory, then from the Mad-Skills clone root link each
-`mad-*/` skill folder individually with `scripts/link-skills.sh` (idempotent;
-re-running replaces existing symlinks; only `mad-*` skill dirs are linked).
-For Cursor alongside Warp, keep the Cursor `~/.cursor/skills/Mad-Skills`
-symlink (below) and use `~/.warp/skills/` for Warp — do not also link Mad
-Skills into `~/.agents/skills/` or as per-skill `~/.cursor/skills/mad-*`
-unless you intentionally want a second discovery path in Cursor.
+Common catalogs (a host may scan more than one):
+
+| Directory | Typical use |
+|-----------|-------------|
+| `~/.agents/skills/` | Shared across tools that use the Agent Skills home layout |
+| `~/.warp/skills/` | Warp-dedicated |
+| `~/.claude/skills/`, `~/.codex/skills/`, `~/.cursor/skills/`, `~/.copilot/skills/`, `~/.factory/skills/`, `~/.gemini/skills/`, `~/.github/skills/`, `~/.opencode/skills/` | Other tool-specific catalogs with the same per-skill shape |
+
+From this repo, link each `mad-*/` skill folder into a chosen catalog with
+`scripts/link-skills.sh` (idempotent; re-running replaces existing symlinks; only
+`mad-*` dirs with a `SKILL.md` are linked).
 
 ```bash
 cd /path/to/Mad-Skills
@@ -50,11 +47,39 @@ cd /path/to/Mad-Skills
 #   --source /path/to/Other-Skills
 ```
 
-Fully quit and reopen Warp, then confirm with `oz agent skills` (or ask the
-Warp agent what skills it sees). Do not use `oz agent list` for this check —
-it lists named/cloud agents, not skill folders.
+**Different from Cursor's Mad Skills install:** Cursor can also discover skills via
+a whole-repo symlink at `~/.cursor/skills/Mad-Skills` (`Mad-Skills/mad-*/SKILL.md`).
+That is **not** the catalog shape above. Per-skill entries under
+`~/.cursor/skills/<skill-name>/` *are* catalog-shaped; the `Mad-Skills` folder
+symlink is not. See **Cursor** and **Warp** below.
+
+### Overlap / duplicates
+
+If the same skill folder is visible under two catalogs a host scans, that host
+lists it twice. Cursor can see both:
+
+- `~/.cursor/skills/Mad-Skills/mad-*` (repo-folder install), and
+- `~/.agents/skills/mad-*` or `~/.cursor/skills/mad-*` (catalog install)
+
+Prefer one path per host. With Cursor's `Mad-Skills` symlink plus Warp, put Warp
+links under `~/.warp/skills/` — not into `~/.agents/skills/` or per-skill
+`~/.cursor/skills/mad-*`.
+
+## Warp (manual)
+
+1. Clone this repo if needed.
+2. Link into a catalog Warp scans (see **Agent Skills catalogs**). Prefer
+   `~/.warp/skills/`. Use `~/.agents/skills/` when sharing one tree with other
+   non-Cursor hosts and you are **not** also using Cursor's `Mad-Skills` folder
+   symlink.
+3. Fully quit and reopen Warp, then confirm with `oz agent skills` (or ask the
+   Warp agent what skills it sees). Do not use `oz agent list` for this check —
+   that lists named/cloud agents, not skill folders.
 
 ## Cursor (manual)
+
+Cursor's recommended Mad Skills install is a **whole-repo** symlink (not one link
+per skill):
 
 ```bash
 mkdir -p ~/.cursor/skills
@@ -62,6 +87,11 @@ ln -s /path/to/Mad-Skills ~/.cursor/skills/Mad-Skills
 ```
 
 Reload Cursor, then check **Customize → Skills** (user scope).
+
+Do not also install the same `mad-*` skills into `~/.agents/skills/` or as
+per-skill `~/.cursor/skills/mad-*` while this symlink exists (see **Overlap /
+duplicates**). Do not replace the `Mad-Skills` folder symlink with per-skill links
+under `~/.cursor/skills/` unless you intentionally want the catalog layout instead.
 
 ## Claude Desktop / cloud (manual)
 
@@ -103,7 +133,7 @@ keys that exist only in `~/.warp/.mcp.json`.
 
 ## Sync
 
-**Cursor** (symlink install):
+**Cursor** (repo-folder symlink):
 
 ```bash
 cd ~/.cursor/skills/Mad-Skills && git pull
@@ -111,10 +141,9 @@ cd ~/.cursor/skills/Mad-Skills && git pull
 
 Or ask the agent to run **mad-update-skills**.
 
-**Warp** (per-skill symlink install): `git pull` in the Mad-Skills clone;
-existing symlinks pick up content updates. Re-run
-`./scripts/link-skills.sh --target <dir>` when the pull adds new `mad-*`
-skill folders. Or ask **mad-update-skills**.
+**Warp** (catalog symlinks): `git pull` in the Mad-Skills clone; existing
+symlinks pick up content updates. Re-run `./scripts/link-skills.sh --target <dir>`
+when the pull adds new `mad-*` skill folders. Or ask **mad-update-skills**.
 
 **Hermes Agent** (`external_dirs` clone): `git pull` in that clone, or ask
 **mad-update-skills** for host-specific steps.
