@@ -365,6 +365,18 @@ GitLab and GitHub only surface inline comments on lines that appear in the MR/PR
 - Review is shared learning, not gatekeeping. Asking whether the team has the consequence in view is a good comment; dressing the same thought as a required change is not.
 - Prefer light formatting. Do not overuse bold. Use inline code for identifiers, paths, types.
 
+### Clarity over sophistication
+
+The reader should get the point on the first read. A comment that has to be re-read to be understood has failed, however precise it is — clever phrasing, dense clauses, and insider shorthand cost the author time and the reviewer credibility.
+
+- **Plain words first.** Say the thing directly. Prefer short, common words over sophisticated or ornate ones; drop rhetorical flourishes, em-dash pile-ups, and abstract nouns when a concrete verb does the job.
+- **One idea per sentence.** Break a long, multi-clause sentence into two or three short ones. If a sentence needs a second read to parse, rewrite it.
+- **Name things the way the code and the reader do.** Use the actual symbol / path / status, not a paraphrase the reader must decode (`status.view.phase == Ready`, not "once the controller blesses it"). Expand jargon and internal shorthand the first time, or avoid it.
+- **Lead with the point.** State the finding or ask up front, then the reasoning — not a build-up that only resolves at the end. For longer comments this is what the `**TLDR:**` line is for.
+- **Show, don't describe, when a snippet is shorter.** A two-line before/after or a concrete example often replaces a paragraph of prose.
+- **Cut every word that does not change the meaning.** After drafting, reread and delete filler; if two sentences say the same thing, keep the clearer one.
+- Sophisticated writing is not the goal and is not a sign of a good review — an obvious, boring comment the author acts on immediately beats an elegant one they have to puzzle over.
+
 ### Related comments
 
 - If two threads address the same decision space, **cross-link** them (file/symbol is enough).
@@ -678,6 +690,7 @@ Wdyt?
 - [ ] Nits use `Nit: `; no other priority labels; bold used sparingly
 - [ ] Drafts over ~100 words / four paragraphs open with a one-sentence `**TLDR:**` then a blank-line-wrapped `---`; shorter drafts and `Nit:` drafts have none; apply-feedback keeps each TLDR in step with its body
 - [ ] Inclusive `we` voice; varied phrasing
+- [ ] Every draft reads clearly on the first pass — plain words, one idea per sentence, point stated up front, real symbol/status names not paraphrases; no clever or dense phrasing that needs re-reading; filler cut
 - [ ] Related threads cross-linked; mutual invalidation called out when relevant
 - [ ] Closers only when natural; `Wdyt?` / doubt sentences on their own line; no `LMK`; varied across the review, not the same phrase every time
 - [ ] Every draft (inline and overview) ends with `<author> · <register> · <evidence>` alone on its final line after a blank line — `:technologist:` when the body is 100% human substance (and then no register/evidence); `:robot:+:technologist:` for shared authorship; apply-feedback never leaves bare `:robot:`
