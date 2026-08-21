@@ -3,7 +3,8 @@ name: mad-process-code-review-inbox
 description: >-
   Triage and process code reviews awaiting the current user's reaction:
   discover pending GitLab/GitHub review requests and open mention threads,
-  run unpublished draft reviews in parallel via mad-draft-code-review, draft
+  set and keep an inbox chat title for the whole thread, run unpublished
+  draft reviews in parallel via mad-draft-code-review, draft replies to
   replies to open questions from Jira/Notion/spec context, never publish
   unless asked, and finish with a verification summary (authors, assignees
   when different, draft ids, links).
@@ -20,12 +21,15 @@ Default comment / reply language: **English** (unless the user requests otherwis
 
 Depends on [mad-draft-code-review](../mad-draft-code-review/SKILL.md) for per-MR/PR review drafts. Follow that skill's voice, Nit rules, closers, and ticket/spec grounding when reviewing. Prefer [mad-visible-links](../mad-visible-links/SKILL.md) in the final summary.
 
+When this skill runs, **own the chat title** for the whole thread — including later per-MR work (re-review, apply feedback) in the same conversation. See [Chat title](#chat-title).
+
 ## Workflow
 
 Copy and track:
 
 ```
 Process code review inbox:
+- [ ] 0. Set inbox chat title (keep for whole thread)
 - [ ] 1. Identify current user (GitLab + GitHub if both used)
 - [ ] 2. Collect awaiting items
 - [ ] 3. Apply filters (bots / user exclusions)
@@ -33,6 +37,23 @@ Process code review inbox:
 - [ ] 5. Process in parallel
 - [ ] 6. Full summary with verification links
 ```
+
+## Chat title
+
+Standing authorization to call `rename_chat` at the start of inbox processing — without asking first.
+
+Format:
+
+```
+Code review inbox — <short scope>
+```
+
+Examples: `Code review inbox — 3 GitLab MRs`, `Code review inbox — mentions only`.
+
+- Set once when processing begins (or when listing if the user will continue in-thread).
+- **Do not** retitle per MR when the user later re-reviews or applies draft feedback on one item in this chat.
+- When delegating review work to [mad-draft-code-review](../mad-draft-code-review/SKILL.md) (parallel subagents or later single-MR follow-ups in this thread), add an explicit instruction: **do not call `rename_chat`** — keep the inbox title. Identify each MR in reply text only.
+- If a follow-up pass would normally invoke `mad-draft-code-review` and its chat-rename step, skip that step here; the inbox title stays unless the user explicitly asks to retitle.
 
 ### 1. Identify current user
 
@@ -72,7 +93,7 @@ If the user only asked "what awaits me", stop after listing filtered items (with
 
 ### 5. Process in parallel
 
-When two or more items need work, process them **in parallel** (separate subagents or concurrent tool batches). Each review item follows `mad-draft-code-review` end-to-end (ticket, referenced Notion/Confluence/spec sections, branch checkout, draft notes only).
+When two or more items need work, process them **in parallel** (separate subagents or concurrent tool batches). Each review item follows `mad-draft-code-review` end-to-end (ticket, referenced Notion/Confluence/spec sections, branch checkout, draft notes only), with the [chat-title override](#chat-title) (no `rename_chat`).
 
 **Reply drafts:**
 
@@ -109,6 +130,7 @@ When listing without processing, keep it short:
 
 ## Checklist before finishing
 
+- [ ] Inbox chat title set; per-MR draft-review passes in this thread were told not to call `rename_chat`
 - [ ] Current user identified on each platform used
 - [ ] Bot dependency PRs filtered unless requested
 - [ ] Reviews and reply-needed mentions classified separately
